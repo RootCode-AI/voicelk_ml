@@ -1,24 +1,22 @@
+import uuid
 from flask import Flask, jsonify, request
-from db_config import get_db_engine
-from sqlalchemy import text
 from werkzeug.security import generate_password_hash, check_password_hash
+from sqlalchemy import text
+from db_config import get_db_engine
 
-# Initialize Flask App
 app = Flask(__name__)
-
-# Initialize Database Engine
 db_engine = get_db_engine()
 
 @app.route('/', methods=['GET'])
 def health_check():
-    """Basic health check route."""
+    """Verify database connectivity and backend status."""
     if db_engine:
         return jsonify({"status": "success", "message": "Backend is running!"}), 200
     return jsonify({"status": "error", "message": "Database connection failed."}), 500
 
 @app.route('/api/register', methods=['POST'])
 def register_user():
-    """API Endpoint to register a new user."""
+    """Handles new user registration and populates base tables."""
     try:
         data = request.get_json()
         username = data.get('username')
@@ -26,7 +24,7 @@ def register_user():
         password = data.get('password')
         role = data.get('role', 'Student')
 
-        if not username or not email or not password:
+        if not all([username, email, password]):
             return jsonify({"status": "error", "message": "Missing required fields!"}), 400
 
         hashed_password = generate_password_hash(password)
@@ -51,15 +49,9 @@ def register_user():
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
-# ---------------------------------------------------------
-# NEW: Login API
-# ---------------------------------------------------------
 @app.route('/api/login', methods=['POST'])
 def login_user():
-    """
-    API Endpoint for user login.
-    Checks if email exists and verifies the hashed password.
-    """
+    """Authenticates credentials and returns user details on success."""
     try:
         data = request.get_json()
         email = data.get('email')
@@ -69,22 +61,15 @@ def login_user():
             return jsonify({"status": "error", "message": "Email and password are required!"}), 400
 
         with db_engine.connect() as conn:
-            # Check if user exists by email
             query = text("SELECT User_ID, User_Name, Password_Hash, Account_Status FROM REGISTERED_USER WHERE Email = :email")
             result = conn.execute(query, {"email": email}).fetchone()
 
             if result:
-                # result contains: (User_ID, User_Name, Password_Hash, Account_Status)
                 stored_password_hash = result[2] 
                 user_name = result[1]
                 
-                # Verify password securely
                 if check_password_hash(stored_password_hash, password):
-                    return jsonify({
-                        "status": "success", 
-                        "message": f"Welcome back, {user_name}!",
-                        "user_id": result[0]
-                    }), 200
+                    return jsonify({"status": "success", "message": f"Welcome back, {user_name}!", "user_id": result[0]}), 200
                 else:
                     return jsonify({"status": "error", "message": "Invalid password!"}), 401
             else:
@@ -93,6 +78,38 @@ def login_user():
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
+@app.route('/api/guest/session', methods=['POST'])
+def create_guest_session():
+    """Generates a temporary session token and tracks the guest IP."""
+    try:
+        session_id = str(uuid.uuid4())
+        ip_address = request.remote_addr or '127.0.0.1'
+
+        with db_engine.connect() as conn:
+            user_insert_query = text("INSERT INTO USER (Role) VALUES ('Guest')")
+            result = conn.execute(user_insert_query)
+            user_id = result.lastrowid
+            
+            guest_insert_query = text("""
+                INSERT INTO GUEST 
+                (User_ID, Session_ID, IP_Address) 
+                VALUES (:uid, :sid, :ip)
+            """)
+            conn.execute(guest_insert_query, {
+                "uid": user_id, "sid": session_id, "ip": ip_address
+            })
+            conn.commit()
+
+        return jsonify({
+            "status": "success", 
+            "message": "Guest session created successfully!",
+            "session_id": session_id,
+            "ip_address": ip_address,
+            "user_id": user_id
+        }), 201
+
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
 if __name__ == '__main__':
-    # Run the Flask development server
     app.run(debug=True, host='127.0.0.1', port=5000)
