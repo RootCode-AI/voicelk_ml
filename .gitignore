@@ -1,0 +1,14 @@
+# Environments
+venv/
+env/
+
+# Python
+__pycache__/
+*.pyc
+
+# Keys and Secrets
+.env
+
+# Large Data Files
+data/
+model_engine/weights/
