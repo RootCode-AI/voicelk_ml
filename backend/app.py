@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime
 from flask import Flask, jsonify, request
 from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy import text
@@ -106,6 +107,43 @@ def create_guest_session():
             "session_id": session_id,
             "ip_address": ip_address,
             "user_id": user_id
+        }), 201
+
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route('/api/query', methods=['POST'])
+def submit_query():
+    """Processes an incoming Sinhala text query and logs it for TTS generation."""
+    try:
+        data = request.get_json()
+        input_text = data.get('input_text')
+        syllabus_topic = data.get('syllabus_topic', 'Uncategorized')
+        user_id = data.get('user_id') 
+
+        if not input_text:
+            return jsonify({"status": "error", "message": "Input text is required!"}), 400
+
+        current_timestamp = datetime.now()
+
+        with db_engine.connect() as conn:
+            query_insert = text("""
+                INSERT INTO query (Input_Text, Syllabus_Topic, Timestamp, User_ID) 
+                VALUES (:txt, :topic, :ts, :uid)
+            """)
+            result = conn.execute(query_insert, {
+                "txt": input_text,
+                "topic": syllabus_topic,
+                "ts": current_timestamp,
+                "uid": user_id
+            })
+            conn.commit()
+            query_id = result.lastrowid
+
+        return jsonify({
+            "status": "success",
+            "message": "Query saved successfully, ready for TTS processing.",
+            "query_id": query_id
         }), 201
 
     except Exception as e:
