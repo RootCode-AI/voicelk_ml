@@ -6,18 +6,18 @@ A dynamic, adaptive Text-to-Speech engine tailored for the Sinhala language. Thi
 
 ### 1. Linguistic Processing & G2P Engine (Active)
 
-* **Hybrid Code-Switching Handler:** Accurately detects language boundaries and segments English and Sinhala text using regular expressions.
-* **Domain-Specific Master Lexicon:** A highly structured, exhaustive JSON dictionary (`lexicon.json`) mapped directly from Grade 10 & 11 ICT textbooks. It overrides generic text-to-speech engines to ensure accurate Sri Lankan pronunciations of technical jargon, acronyms, and complex Sinhala conjuncts.
-* **Unified Phonetic Integration:** Dynamically routes segregated segments to distinct G2P modules (`sinling` for Sinhala, `eng_to_ipa` for English) and merges them into a single, cohesive International Phonetic Alphabet (IPA) sequence for the VITS acoustic model.
+* **Text Normalization Pipeline (`normalizer.py`):** Cleans mixed Sinhala-English input, expands ICT operators (`==`, `>=`, `&&`), numbers, percentages, URLs, and IP addresses.
+* **Hybrid Code-Switching Handler (`g2p.py`):** Detects language boundaries and routes segments to Sinhala (`sinling`) and English (`eng_to_ipa`) G2P modules.
+* **Domain-Specific Master Lexicon:** A structured JSON dictionary (`lexicon.json`) mapped from Grade 10 & 11 ICT textbooks.
+* **End-to-End NLP Pipeline (`pipeline.py`):** Chains normalization and G2P into a unified IPA sequence for the VITS acoustic model.
+* **Backend NLP API:** `POST /api/nlp/process` and `POST /api/tts/process` expose the pipeline via Flask.
 
 ### 2. Backend & Security (Phase 1)
 
-* **Standardized Project Structure:** Segregated directories for frontend, backend, and model engines.
-* **Database Integration:** Configured securely with MySQL and SQLAlchemy.
-* **User Authentication:**
-  * Registration API with secure password hashing (`Werkzeug`).
-  * Login API with credential verification.
-* **Guest Sessions:** Seamless API to generate temporary 24-hour UUID tokens and track IP addresses for unregistered users.
+* **Standardized Project Structure:** Segregated directories for frontend, backend, model engine, and database.
+* **Database Integration:** MySQL schema in `database/schema.sql` aligned with the SDS EER model.
+* **User Authentication:** Registration with SRS password rules, login with account locking after 3 failed attempts.
+* **Guest Sessions:** UUID-based sessions with 24-hour expiry validation.
 
 ## 🛠️ Technology Stack
 
@@ -32,12 +32,17 @@ A dynamic, adaptive Text-to-Speech engine tailored for the Sinhala language. Thi
 adaptive-sinhala-tts/
 ├── backend/          # Flask APIs and Database logic
 │   ├── app.py        # Main backend entry point
-│   └── db_config.py  # Database connection setup
-├── database/         # SQL scripts and schema designs
-├── frontend/         # UI/UX design components
-├── model_engine/     # AI/ML TTS models and linguistic processing
-│   ├── g2p.py        # Advanced Code-Switched G2P Routing Logic
-│   └── lexicon.json  # O/L ICT Master Pronunciation Lexicon
+│   ├── db_config.py  # Database connection setup
+│   ├── nlp_service.py # Bridge to model_engine pipeline
+│   └── validators.py # SRS input/password validation
+├── database/         # SQL schema (SDS-aligned)
+│   └── schema.sql
+├── frontend/         # UI/UX (planned)
+├── model_engine/     # NLP pipeline and lexicon
+│   ├── pipeline.py   # End-to-end normalization + G2P
+│   ├── normalizer.py # Stage 1 text normalization
+│   ├── g2p.py        # Stage 2 code-switched G2P
+│   └── lexicon.json  # O/L ICT pronunciation lexicon
 ├── .env              # Environment variables (Not pushed to version control)
 ├── .gitignore        # Git ignore rules
 └── requirements.txt  # Python dependencies
@@ -70,7 +75,15 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 4. Run the application
+Copy `.env.example` to `.env` and set your MySQL credentials.
+
+### 4. Initialize the database
+
+```bash
+mysql -u root -p < database/schema.sql
+```
+
+### 5. Run the application
 
 Ensure your local MySQL server is running, and execute:
 
@@ -92,9 +105,13 @@ python -X utf8 model_engine/g2p.py
 
 | Method | Endpoint | Description |
 |---|---|---|
-| GET | `/` | Health check to verify backend and DB connection. |
-| POST | `/api/register` | Registers a new user. Requires `username`, `email`, `password`. |
-| POST | `/api/login` | Authenticates a user. Requires `email`, `password`. |
-| POST | `/api/guest/session` | Creates a temporary guest session. Returns `session_id`. |
+| GET | `/` | Health check (database + pipeline status). |
+| POST | `/api/register` | Registers a new user (SRS password rules). |
+| POST | `/api/login` | Authenticates a user (account lock after 3 failures). |
+| POST | `/api/guest/session` | Creates a 24-hour guest session. |
+| POST | `/api/guest/session/validate` | Validates an active guest session. |
+| POST | `/api/nlp/process` | Runs normalization + G2P (no DB write). |
+| POST | `/api/tts/process` | Full processing layer + saves QUERY/ANSWER. |
+| POST | `/api/query` | Alias for `/api/tts/process`. |
 
-> **Note:** The Linguistic Processing module is currently active. The Text Normalization Pipeline (cleaning text, expanding numbers) is actively under development for the next phase.
+> **Note:** VITS acoustic synthesis (waveform generation) is the next research phase. The NLP pipeline (text → IPA) is active and integrated with the backend.
