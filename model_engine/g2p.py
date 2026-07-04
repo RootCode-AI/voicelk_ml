@@ -24,6 +24,18 @@ class CodeSwitchedG2P:
         except Exception:
             self.en_lexicon = {}
             self.si_lexicon = {}
+
+        self.word_acronyms = {
+            key for key, entry in self.en_lexicon.items()
+            if entry.get('read_as') == 'word' and key.isalpha() and len(key) <= 5
+        }
+
+        self.letter_ipa = {
+            'a': 'eɪ', 'b': 'biː', 'c': 'siː', 'd': 'diː', 'e': 'iː', 'f': 'ef', 'g': 'dʒiː',
+            'h': 'eɪtʃ', 'i': 'aɪ', 'j': 'dʒeɪ', 'k': 'keɪ', 'l': 'el', 'm': 'em', 'n': 'en',
+            'o': 'oʊ', 'p': 'piː', 'q': 'kjuː', 'r': 'ɑːr', 's': 'es', 't': 'tiː',
+            'u': 'juː', 'v': 'viː', 'w': 'dʌbəl.juː', 'x': 'eks', 'y': 'waɪ', 'z': 'ziː'
+        }
         
         self.si_consonants = {
             'ක': 'k', 'ඛ': 'kh', 'ග': 'g', 'ඝ': 'gh', 'ඞ': 'ng',
@@ -46,11 +58,29 @@ class CodeSwitchedG2P:
             'ෞ': 'au', 'ෛ': 'ai'
         }
 
+    def _spell_as_letters(self, text):
+        """Spells an uppercase acronym letter-by-letter (e.g., MB -> em biː)."""
+        parts = []
+        for char in text.upper():
+            if char in self.letter_ipa:
+                parts.append(self.letter_ipa[char])
+        return ' '.join(parts)
+
     def _process_english(self, text):
-        """Converts English text to IPA, extracting from the structured object if present."""
+        """Converts English text to IPA, with smart handling for single letters and lexicon overrides."""
         word_lower = text.lower()
+        
         if word_lower in self.en_lexicon:
             return self.en_lexicon[word_lower].get('ipa', '')
+
+        if len(text) == 1 and word_lower in self.letter_ipa:
+            return self.letter_ipa[word_lower]
+
+        if text.isupper() and text.isalpha() and len(text) >= 2:
+            if word_lower in self.word_acronyms:
+                result = self.en_g2p.convert(text)
+                return result.replace('*', '')
+            return self._spell_as_letters(text)
             
         result = self.en_g2p.convert(text)
         return result.replace('*', '')
@@ -85,17 +115,18 @@ class CodeSwitchedG2P:
         unified_ipa = []
 
         for token in tokens:
-            if re.match(r'[a-zA-Z]+', token):
+            if re.match(r'^[a-zA-Z]+$', token):
                 unified_ipa.append(self._process_english(token))
-            elif re.match(r'[\u0D80-\u0DFF]+', token):
+            elif re.match(r'^[\u0D80-\u0DFF\u200D]+$', token):
                 unified_ipa.append(self._process_sinhala_word(token))
             else:
+                # FIXED: Retains punctuation marks and spaces instead of dropping them
                 unified_ipa.append(token)
                 
         return " ".join(unified_ipa).strip()
 
 if __name__ == "__main__":
     g2p_engine = CodeSwitchedG2P()
-    sample_text = "දත්ත Database පද්ධතිය සහ ඩිජිටල් තාක්ෂණය"
+    sample_text = "දත්ත Database පද්ධතිය සහ ඩිජිටල් තාක්ෂණය."
     result = g2p_engine.generate_unified_ipa(sample_text)
     print(f"Input: {sample_text}\nUnified IPA: {result}")
