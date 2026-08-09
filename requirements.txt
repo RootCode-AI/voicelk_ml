@@ -1,5 +1,5 @@
 # NLP Microservice Dependencies
-# Database, Auth & Security libs removed (handled by Java backend)
+
 
 flask>=3.0.0
 flask-cors>=4.0.0

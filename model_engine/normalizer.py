@@ -15,6 +15,7 @@ class SinhalaTextNormalizer:
       3. expand_symbols       — mathematical / logical / relational operators
       4. expand_numbers       — standalone digit sequences
       5. remove_noise         — emojis and undefined special characters
+      6. pad_punctuation      — decouple punctuation from valid tokens
     """
 
     def __init__(self):
@@ -106,6 +107,10 @@ class SinhalaTextNormalizer:
         text = re.sub(r"\s+", " ", text).strip()
         return text
 
+    def pad_punctuation(self, text: str) -> str:
+        """Separates punctuation marks from words to ensure clean tokenization."""
+        return re.sub(r"([.,?!])", r" \1 ", text)
+
     def normalize(self, text: str) -> str:
         """Executes the full preprocessing pipeline in the correct logical order."""
         text = self.expand_urls_and_ips(text)
@@ -113,6 +118,8 @@ class SinhalaTextNormalizer:
         text = self.expand_symbols(text)
         text = self.expand_numbers(text)
         text = self.remove_noise(text)
+        text = self.pad_punctuation(text)  # Automatically decouples punctuation
+        text = re.sub(r"\s+", " ", text).strip()
         return text
 
     # ------------------------------------------------------------------

@@ -1,4 +1,4 @@
-# voicelk_ml — VoiceLK Machine Learning Service
+﻿# voicelk_ml — VoiceLK Machine Learning Service
 
 > **Part of the VoiceLK Adaptive Sinhala TTS System**  
 > A dedicated Python AI microservice responsible for NLP text processing and (upcoming) VITS acoustic synthesis. Designed specifically for Sri Lanka's G.C.E. O/L ICT curriculum.
