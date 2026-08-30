@@ -1,0 +1,13 @@
+# Training-only dependencies for the VITS acoustic model (heavy, GPU-oriented).
+# Install these in a SEPARATE environment from voicelk_ml/requirements.txt, which is the
+# lightweight NLP-only environment for the Flask API service. Do not mix the two venvs.
+#
+# Install Coqui TTS itself from the vendored copy in this project:
+#   pip install -e ../../TTS-dev/TTS-dev
+
+torch>=2.0.0
+torchaudio>=2.0.0
+pandas>=2.0.0
+soundfile>=0.12.0
+librosa>=0.10.0
+tqdm>=4.65.0
