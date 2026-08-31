@@ -2,13 +2,14 @@ import csv
 import os
 import sys
 
-# Add the project root (voicelk_ml/) to the system path so Python can find the
-# model_engine package regardless of the current working directory this is run from.
+# Add model_engine/ itself (not the project root) to the system path, matching how
+# api/main.py loads this package — pipeline.py uses flat sibling imports internally
+# (e.g. "from normalizer import ..."), so model_engine/ must be on sys.path directly.
 current_dir = os.path.dirname(os.path.abspath(__file__))
 project_root = os.path.dirname(current_dir)
-sys.path.insert(0, project_root)
+sys.path.insert(0, os.path.join(project_root, "model_engine"))
 
-from model_engine.pipeline import TextProcessingPipeline
+from pipeline import TextProcessingPipeline
 
 # The raw OpenSLR index file has 3 columns in this order: FileID, anonymized UserID, transcription.
 # Set this to False if the actual file has no header row.
