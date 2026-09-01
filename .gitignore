@@ -12,3 +12,8 @@ __pycache__/
 # Large Data Files
 data/
 model_engine/weights/
+
+# tester ipynb
+tester.ipynb
+
+.idea/
