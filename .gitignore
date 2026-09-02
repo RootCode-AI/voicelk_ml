@@ -10,7 +10,6 @@ __pycache__/
 .env
 
 # Large Data Files
-data/
 model_engine/weights/
 
 # tester ipynb
