@@ -23,71 +23,77 @@ from TTS.utils.audio import AudioProcessor
 from formatters import custom_formatter
 from vocab_utils import build_characters_config
 
-current_dir = os.path.dirname(os.path.abspath(__file__))
-project_root = os.path.dirname(current_dir)
-data_path = os.path.join(project_root, "data")
-output_path = os.path.join(current_dir, "runs", "custom")
 
-METADATA_FILE = "metadata.txt"
+def main():
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    project_root = os.path.dirname(current_dir)
+    data_path = os.path.join(project_root, "data")
+    output_path = os.path.join(current_dir, "runs", "custom")
 
-dataset_config = BaseDatasetConfig(
-    formatter="custom_formatter",
-    dataset_name="voicelk_custom",
-    meta_file_train=METADATA_FILE,
-    path=data_path,
-)
+    METADATA_FILE = "metadata.txt"
 
-characters_config = build_characters_config(os.path.join(data_path, METADATA_FILE))
+    dataset_config = BaseDatasetConfig(
+        formatter="custom_formatter",
+        dataset_name="voicelk_custom",
+        meta_file_train=METADATA_FILE,
+        path=data_path,
+    )
 
-# NOTE: sample_rate must match your actual .wav files. Check with, e.g.:
-#   python -c "import soundfile as sf; print(sf.info('data/wavs/<some_file>.wav'))"
-# and adjust here if it isn't 22050.
-audio_config = VitsAudioConfig(
-    sample_rate=22050, win_length=1024, hop_length=256, num_mels=80, mel_fmin=0, mel_fmax=None
-)
+    characters_config = build_characters_config(os.path.join(data_path, METADATA_FILE))
 
-config = VitsConfig(
-    audio=audio_config,
-    run_name="voicelk_vits_custom",
-    batch_size=16,
-    eval_batch_size=8,
-    batch_group_size=5,
-    num_loader_workers=2,
-    num_eval_loader_workers=2,
-    run_eval=True,
-    test_delay_epochs=-1,
-    epochs=1000,
-    text_cleaner="basic_cleaners",
-    use_phonemes=False,
-    compute_input_seq_cache=True,
-    print_step=25,
-    print_eval=True,
-    mixed_precision=True,
-    output_path=output_path,
-    datasets=[dataset_config],
-    characters=characters_config,
-    cudnn_benchmark=True,
-)
+    # NOTE: sample_rate must match your actual .wav files. Check with, e.g.:
+    #   python -c "import soundfile as sf; print(sf.info('data/wavs/<some_file>.wav'))"
+    # and adjust here if it isn't 22050.
+    audio_config = VitsAudioConfig(
+        sample_rate=22050, win_length=1024, hop_length=256, num_mels=80, mel_fmin=0, mel_fmax=None
+    )
 
-ap = AudioProcessor.init_from_config(config)
-tokenizer, config = TTSTokenizer.init_from_config(config)
+    config = VitsConfig(
+        audio=audio_config,
+        run_name="voicelk_vits_custom",
+        batch_size=16,
+        eval_batch_size=8,
+        batch_group_size=5,
+        num_loader_workers=2,
+        num_eval_loader_workers=2,
+        run_eval=True,
+        test_delay_epochs=-1,
+        epochs=1000,
+        text_cleaner="basic_cleaners",
+        use_phonemes=False,
+        compute_input_seq_cache=True,
+        print_step=25,
+        print_eval=True,
+        mixed_precision=True,
+        output_path=output_path,
+        datasets=[dataset_config],
+        characters=characters_config,
+        cudnn_benchmark=True,
+    )
 
-train_samples, eval_samples = load_tts_samples(
-    dataset_config,
-    formatter=custom_formatter,
-    eval_split=True,
-    eval_split_max_size=config.eval_split_max_size,
-    eval_split_size=config.eval_split_size,
-)
+    ap = AudioProcessor.init_from_config(config)
+    tokenizer, config = TTSTokenizer.init_from_config(config)
 
-model = Vits(config, ap, tokenizer, speaker_manager=None)
+    train_samples, eval_samples = load_tts_samples(
+        dataset_config,
+        formatter=custom_formatter,
+        eval_split=True,
+        eval_split_max_size=config.eval_split_max_size,
+        eval_split_size=config.eval_split_size,
+    )
 
-trainer = Trainer(
-    TrainerArgs(),
-    config,
-    output_path,
-    model=model,
-    train_samples=train_samples,
-    eval_samples=eval_samples,
-)
-trainer.fit()
+    model = Vits(config, ap, tokenizer, speaker_manager=None)
+
+    trainer = Trainer(
+        TrainerArgs(),
+        config,
+        output_path,
+        model=model,
+        train_samples=train_samples,
+        eval_samples=eval_samples,
+    )
+    trainer.fit()
+
+
+if __name__ == "__main__":
+    main()
