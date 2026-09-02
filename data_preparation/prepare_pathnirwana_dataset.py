@@ -29,14 +29,15 @@ def _extract_speaker_id(utt_id: str) -> str:
     return "pathnirwana_speaker"  # fallback if an ID doesn't follow the expected pattern
 
 
-def prepare_pathnirwana_dataset():
+def prepare_pathnirwana_dataset(input_path=None):
     print("Loading NLP Pipeline...")
     # Initialize the text-to-IPA processing engine
     pipeline = TextProcessingPipeline()
 
-    # Define file paths for the Pathnirwana dataset (resolved relative to the project
-    # root, not the current working directory)
-    txt_path = os.path.join(project_root, "data", "pathnirwana_dataset.txt")
+    # Define file paths for the Pathnirwana dataset. Defaults to the project's data/
+    # folder (used in Colab/Drive runs), but an explicit input_path (e.g. a local test
+    # file) can be passed in instead — see the command-line usage note below.
+    txt_path = input_path or os.path.join(project_root, "data", "pathnirwana_dataset.txt")
     output_txt = os.path.join(project_root, "data", "pathnirwana_metadata.txt")
 
     # Check if the dataset index file exists before proceeding
@@ -102,4 +103,8 @@ def prepare_pathnirwana_dataset():
 
 
 if __name__ == "__main__":
-    prepare_pathnirwana_dataset()
+    # Usage:
+    #   python prepare_pathnirwana_dataset.py                     -> reads data/pathnirwana_dataset.txt
+    #   python prepare_pathnirwana_dataset.py /path/to/local/file -> reads that file instead (e.g. for local testing)
+    cli_input_path = sys.argv[1] if len(sys.argv) > 1 else None
+    prepare_pathnirwana_dataset(cli_input_path)

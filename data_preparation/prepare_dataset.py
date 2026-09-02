@@ -19,7 +19,7 @@ def prepare_vits_dataset():
     # Define file paths based on the custom dataset name (resolved relative to the
     # project root, not the current working directory)
     csv_path = os.path.join(project_root, "data", "custom_dataset.csv")
-    output_txt = os.path.join(project_root, "data", "metadata.txt")
+    output_txt = os.path.join(project_root, "data", "custom_metadata.txt")
 
     # Check if the dataset CSV exists before proceeding
     if not os.path.exists(csv_path):
@@ -39,6 +39,7 @@ def prepare_vits_dataset():
         reader = csv.DictReader(csvfile)
 
         for row in reader:
+            file_name = None
             try:
                 # Extract file name and transcript (matching your Google Sheet headers)
                 # NOTE: uses the code-switched column since that's what matches the actual
