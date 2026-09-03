@@ -72,7 +72,7 @@ def main():
         output_path=output_path,
         datasets=[dataset_config],
         characters=characters_config,
-        cudnn_benchmark=True,
+        cudnn_benchmark=False,
     )
 
     ap = AudioProcessor.init_from_config(config)
