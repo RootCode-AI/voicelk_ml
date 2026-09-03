@@ -51,8 +51,8 @@ def main():
     config = VitsConfig(
         audio=audio_config,
         run_name="voicelk_vits_custom",
-        batch_size=16,
-        eval_batch_size=8,
+        batch_size=8,
+        eval_batch_size=4,
         batch_group_size=5,
         num_loader_workers=2,
         num_eval_loader_workers=2,
