@@ -65,6 +65,9 @@ def main():
         epochs=1000,
         text_cleaner="basic_cleaners",
         use_phonemes=False,
+        min_audio_len=22050 * 1,   # ~1s min
+        max_audio_len=22050 * 15,  # ~15s max — filters out extreme outlier clips that blow up
+                                    # maximum_path_numpy's memory use (see VoiceLK training notes)
         compute_input_seq_cache=True,
         print_step=25,
         print_eval=True,
