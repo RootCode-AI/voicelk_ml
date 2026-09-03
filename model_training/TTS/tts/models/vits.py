@@ -5,6 +5,7 @@ from itertools import chain
 from typing import Dict, List, Tuple, Union
 
 import numpy as np
+import soundfile as sf
 import torch
 import torch.distributed as dist
 import torchaudio
@@ -70,7 +71,13 @@ def load_audio(file_path):
     Return Shapes:
         - x: :math:`[1, T]`
     """
-    x, sr = torchaudio.load(file_path)
+    # VoiceLK note: loaded via `soundfile` instead of `torchaudio.load()` — the latter's
+    # default backend (torchcodec) dynamically loads FFmpeg's native DLLs at runtime, which
+    # proved unreliable to get working on Windows (tried FFmpeg 8.1.2 and 7.1.5, both failed
+    # with the same "Could not load this library" OSError). `soundfile` is a pure libsndfile
+    # binding already used elsewhere in this project and has no such dependency.
+    data, sr = sf.read(file_path, dtype="float32", always_2d=True)
+    x = torch.from_numpy(data.T)
     assert (x > 1).sum() + (x < -1).sum() == 0
     return x, sr
 
