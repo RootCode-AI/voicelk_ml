@@ -43,7 +43,7 @@ characters_config = build_characters_config(os.path.join(data_path, METADATA_FIL
 #   python -c "import soundfile as sf; print(sf.info('data/wavs/<some_file>.wav'))"
 # and adjust here if it isn't 22050.
 audio_config = VitsAudioConfig(
-    sample_rate=22050, win_length=1024, hop_length=256, num_mels=80, mel_fmin=0, mel_fmax=None
+    sample_rate=16000, win_length=1024, hop_length=256, num_mels=80, mel_fmin=0, mel_fmax=8000
 )
 
 config = VitsConfig(
