@@ -18,3 +18,5 @@ tester.ipynb
 .idea/
 
 model_evaluate/outputs/
+
+venv_training/
