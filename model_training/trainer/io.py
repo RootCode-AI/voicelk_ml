@@ -182,8 +182,9 @@ def save_best_model(
 ):
     if isinstance(current_loss, dict):
         use_eval_loss = current_loss["eval_loss"] is not None and best_loss["eval_loss"] is not None
+        use_train_loss = current_loss["train_loss"] is not None and best_loss["train_loss"] is not None
         is_save_model = (use_eval_loss and current_loss["eval_loss"] < best_loss["eval_loss"]) or (
-            not use_eval_loss and current_loss["train_loss"] < best_loss["train_loss"]
+            not use_eval_loss and use_train_loss and current_loss["train_loss"] < best_loss["train_loss"]
         )
     else:
         is_save_model = current_loss < best_loss

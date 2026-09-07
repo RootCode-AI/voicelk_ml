@@ -28,7 +28,7 @@ project_root = os.path.dirname(current_dir)
 data_path = os.path.join(project_root, "data")
 output_path = os.path.join(current_dir, "runs", "custom")
 
-METADATA_FILE = "metadata.txt"
+METADATA_FILE = "custom_metadata.txt"
 
 dataset_config = BaseDatasetConfig(
     formatter="custom_formatter",

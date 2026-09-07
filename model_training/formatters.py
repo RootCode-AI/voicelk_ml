@@ -18,6 +18,11 @@ def custom_formatter(root_path, meta_file, **kwargs):  # pylint: disable=unused-
     """VoiceLK custom (YouTube-scraped) dataset — single speaker.
 
     Line format: wavs/{file_name}|{ipa_sequence}
+
+    Uses split("|", 1) rather than a plain split("|") because the ipa_sequence
+    itself may legitimately contain "|" characters (e.g. from an older G2P
+    version's phoneme separator) — a plain split would silently truncate the
+    text to whatever precedes the first embedded "|".
     """
     txt_file = os.path.join(root_path, meta_file)
     items = []
@@ -27,7 +32,7 @@ def custom_formatter(root_path, meta_file, **kwargs):  # pylint: disable=unused-
             line = line.strip()
             if not line:
                 continue
-            cols = line.split("|")
+            cols = line.split("|", 1)
             if len(cols) < 2:
                 continue
             wav_file = os.path.join(root_path, cols[0])
@@ -40,6 +45,11 @@ def openslr_formatter(root_path, meta_file, ignored_speakers=None, **kwargs):  #
     """OpenSLR Sinhala corpus — multi-speaker.
 
     Line format: wavs/{file_id}|{ipa_sequence}|{user_id}
+
+    The file path and speaker id are split off from the outside in (first "|"
+    for the path, last "|" for the speaker id), so any "|" characters embedded
+    in the ipa_sequence itself (see custom_formatter's note) stay intact
+    instead of being mistaken for column separators.
     """
     txt_file = os.path.join(root_path, meta_file)
     items = []
@@ -48,12 +58,11 @@ def openslr_formatter(root_path, meta_file, ignored_speakers=None, **kwargs):  #
             line = line.strip()
             if not line:
                 continue
-            cols = line.split("|")
-            if len(cols) < 3:
+            wav_col, _, rest = line.partition("|")
+            text, sep, speaker_name = rest.rpartition("|")
+            if not sep:
                 continue
-            wav_file = os.path.join(root_path, cols[0])
-            text = cols[1]
-            speaker_name = cols[2]
+            wav_file = os.path.join(root_path, wav_col)
             if ignored_speakers and speaker_name in ignored_speakers:
                 continue
             items.append({"text": text, "audio_file": wav_file, "speaker_name": speaker_name, "root_path": root_path})
@@ -64,6 +73,9 @@ def pathnirwana_formatter(root_path, meta_file, ignored_speakers=None, **kwargs)
     """Pathnirwana dataset — multi-speaker.
 
     Line format: wavs/{file_name}|{ipa_sequence}|{speaker_id}
+
+    See openslr_formatter's note: split from the outside in so embedded "|"
+    characters in the ipa_sequence don't get mistaken for column separators.
     """
     txt_file = os.path.join(root_path, meta_file)
     items = []
@@ -72,12 +84,11 @@ def pathnirwana_formatter(root_path, meta_file, ignored_speakers=None, **kwargs)
             line = line.strip()
             if not line:
                 continue
-            cols = line.split("|")
-            if len(cols) < 3:
+            wav_col, _, rest = line.partition("|")
+            text, sep, speaker_name = rest.rpartition("|")
+            if not sep:
                 continue
-            wav_file = os.path.join(root_path, cols[0])
-            text = cols[1]
-            speaker_name = cols[2]
+            wav_file = os.path.join(root_path, wav_col)
             if ignored_speakers and speaker_name in ignored_speakers:
                 continue
             items.append({"text": text, "audio_file": wav_file, "speaker_name": speaker_name, "root_path": root_path})
