@@ -11,6 +11,12 @@ Usage (from the project root, e.g. in Colab after `%cd` into it):
 
 import os
 
+# Must be set before any CUDA-touching import (torch, TTS, trainer) — pins this
+# single-speaker run to one GPU so it works unattended on multi-GPU notebooks
+# (e.g. Kaggle's "GPU T4 x2") without relying on the shell/notebook environment
+# to set it, since this script isn't set up for multi-GPU/DDP training.
+os.environ.setdefault("CUDA_VISIBLE_DEVICES", "0")
+
 from trainer import Trainer, TrainerArgs
 
 from TTS.tts.configs.shared_configs import BaseDatasetConfig
