@@ -88,8 +88,17 @@ train_samples, eval_samples = load_tts_samples(
 
 model = Vits(config, ap, tokenizer, speaker_manager=None)
 
+# Parses --continue_path (and any other TrainerArgs flag, e.g. --restore_path)
+# from the command line. --continue_path points at a previous run folder
+# (e.g. model_training/runs/custom/voicelk_vits_custom-<date>-<hash>); the
+# trainer reads that folder's config.json and last checkpoint automatically.
+train_args = TrainerArgs()
+parser = train_args.init_argparse(arg_prefix="")
+cli_args, _ = parser.parse_known_args()
+train_args.parse_args(cli_args)
+
 trainer = Trainer(
-    TrainerArgs(),
+    train_args,
     config,
     output_path,
     model=model,
