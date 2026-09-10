@@ -20,3 +20,10 @@ tester.ipynb
 model_evaluate/outputs/
 
 venv_training/
+
+venv_evoluation/
+custom_test_output.wav
+custom_unseen_test_output.wav
+pathnirwana_test_output.wav
+pathnirwana_unseen_test_output.wav
+docs/LEXICON_GAP_ANALYSIS.md
