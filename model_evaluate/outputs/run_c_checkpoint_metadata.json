@@ -1,0 +1,154 @@
+{
+  "checkpoints": {
+    "best_model.pth": {
+      "size_mb": 990.5566892623901,
+      "keys": [
+        "config",
+        "model",
+        "optimizer",
+        "scaler",
+        "step",
+        "epoch",
+        "date",
+        "model_loss"
+      ],
+      "meta": {
+        "config": "<dict len=108>",
+        "step": 115171,
+        "epoch": 73,
+        "date": "September 08, 2026",
+        "model_loss": "<dict len=2>"
+      },
+      "n_params": 86453036
+    },
+    "best_model_115171.pth": {
+      "size_mb": 990.5566892623901,
+      "keys": [
+        "config",
+        "model",
+        "optimizer",
+        "scaler",
+        "step",
+        "epoch",
+        "date",
+        "model_loss"
+      ],
+      "meta": {
+        "config": "<dict len=108>",
+        "step": 115171,
+        "epoch": 73,
+        "date": "September 08, 2026",
+        "model_loss": "<dict len=2>"
+      },
+      "n_params": 86453036
+    },
+    "checkpoint_100000.pth": {
+      "size_mb": 990.5566892623901,
+      "keys": [
+        "config",
+        "model",
+        "optimizer",
+        "scaler",
+        "step",
+        "epoch",
+        "date",
+        "model_loss"
+      ],
+      "meta": {
+        "config": "<dict len=108>",
+        "step": 100000,
+        "epoch": 235,
+        "date": "September 08, 2026",
+        "model_loss": "<dict len=2>"
+      },
+      "n_params": 86453036
+    },
+    "checkpoint_110000.pth": {
+      "size_mb": 990.5566892623901,
+      "keys": [
+        "config",
+        "model",
+        "optimizer",
+        "scaler",
+        "step",
+        "epoch",
+        "date",
+        "model_loss"
+      ],
+      "meta": {
+        "config": "<dict len=108>",
+        "step": 110000,
+        "epoch": 48,
+        "date": "September 08, 2026",
+        "model_loss": "<dict len=2>"
+      },
+      "n_params": 86453036
+    },
+    "checkpoint_120000.pth": {
+      "size_mb": 990.5566892623901,
+      "keys": [
+        "config",
+        "model",
+        "optimizer",
+        "scaler",
+        "step",
+        "epoch",
+        "date",
+        "model_loss"
+      ],
+      "meta": {
+        "config": "<dict len=108>",
+        "step": 120000,
+        "epoch": 97,
+        "date": "September 08, 2026",
+        "model_loss": "<dict len=2>"
+      },
+      "n_params": 86453036
+    },
+    "checkpoint_130000.pth": {
+      "size_mb": 990.5566892623901,
+      "keys": [
+        "config",
+        "model",
+        "optimizer",
+        "scaler",
+        "step",
+        "epoch",
+        "date",
+        "model_loss"
+      ],
+      "meta": {
+        "config": "<dict len=108>",
+        "step": 130000,
+        "epoch": 146,
+        "date": "September 09, 2026",
+        "model_loss": "<dict len=2>"
+      },
+      "n_params": 86453036
+    },
+    "checkpoint_140000.pth": {
+      "size_mb": 990.5566892623901,
+      "keys": [
+        "config",
+        "model",
+        "optimizer",
+        "scaler",
+        "step",
+        "epoch",
+        "date",
+        "model_loss"
+      ],
+      "meta": {
+        "config": "<dict len=108>",
+        "step": 140000,
+        "epoch": 195,
+        "date": "September 09, 2026",
+        "model_loss": "<dict len=2>"
+      },
+      "n_params": 86453036
+    }
+  },
+  "best_model_md5": "6d725713c8055c7386c926402bddbb72",
+  "best_model_115171_md5": "6d725713c8055c7386c926402bddbb72",
+  "identical": true
+}

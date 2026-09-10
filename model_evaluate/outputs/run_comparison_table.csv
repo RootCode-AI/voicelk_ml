@@ -1,0 +1,24 @@
+﻿metric,run_a,run_b,run_c
+commit_hash_suffix,722d5af,de782c1,722d5af
+training_start,2026-09-02 10:41,2026-09-03 18:35,2026-09-04 19:41
+checkpoint_used,best_model_51660.pth,best_model_820.pth,"best_model.pth == best_model_115171.pth (byte-identical, md5-verified)"
+checkpoint_step,51660,820,115171
+total_steps_reached (log GLOBAL_STEP),51660,820,142200
+model_args.num_speakers (config),234,234,234
+formatters.py bug present at train time,YES (234 bogus speakers),YES (234 bogus speakers),YES (234 bogus speakers) -- fix exists at repo HEAD but was NOT used for this run
+epochs (config),1000,1000,1000
+batch_size,16,16,16
+lr / lr_gen / lr_disc,0.001/0.0002/0.0002,0.001/0.0002/0.0002,0.001/0.0002/0.0002
+mixed_precision,True,True,True
+checkpoint file size (MB),990.6,990.6,990.6
+parameter count,"86.5M (86,453,036, per notebook Section 3.1)",n/a (not measured in existing notebook),"86,453,036 (86.453M) -- verified via torch.load"
+best/eval checkpoint mel loss (EvalStats/avg_loss_mel),n/a (Run A tfevents subset used in notebook only covered steps 0-200),,"17.282 at step 115171 (official 'best'); global min across full history = 16.917 at step 94098 (not checkpointed, likely due to a Colab-reconnect reset of the trainer's best-loss tracking)"
+best checkpoint total eval loss (EvalStats/avg_loss_1),,,~30.6 (interpolated near step 115171); global min = 26.496 at step 94098
+checkpoint-internal model_loss dict (train_loss/eval_loss),,,"train_loss=17.136, eval_loss=15.236 (Coqui Trainer's own internal criterion, distinct from raw avg_loss_mel/avg_loss_1 tags)"
+final-portion eval loss shape,,,"noisy plateau, not monotonically improving: last-quartile avg_loss_mel mean=19.785 (std=0.830, range 17.28-21.51), linear slope ~+0.003/1000 steps (~flat/slightly up); last-quartile avg_loss_1 mean=32.017 (std=1.420), slope ~+0.03/1000 steps"
+"train vs eval gap (mel, last 5 pts)",,,"train mean=19.942, eval mean=20.035, gap=+0.094 (eval only marginally above train -- no strong overfitting signal, but no further generalization gain either)"
+"RTF (mean, CPU)",0.449,not measured in existing notebook,"0.439 (per-sentence: 0.419, 0.465, 0.463, 0.419, 0.427); Run A=0.449, delta=-0.010 (within noise, confirms same architecture/param count -> near-identical CPU inference speed)"
+MCD (mean dB),not computed (ground-truth wavs absent locally; cell produced no output),not computed,not computed (same limitation: voicelk_ml/data/wavs/ ground-truth audio not present in this local environment)
+tfevents wall-clock span (hours),0.2 (lower bound -- only 200 steps logged in the single tfevents file the notebook read),,"108.13 (steps 0-142200, matches trainer_0_log.txt span 2026-09-04 19:41:31 to 2026-09-09 07:50:16 to within ~1 minute -- i.e. little/no invisible reconnect gap)"
+num tfevents files (Colab reconnects),1,1,6
+fairness/bias status,"blocked (234 bogus speakers, 1 real speaker)",blocked (same),"still blocked (same bug, unresolved)"

@@ -17,7 +17,7 @@ tester.ipynb
 
 .idea/
 
-model_evaluate/outputs/
+model_evaluate/outputs/mos_samples_custom
 
 venv_training/
 

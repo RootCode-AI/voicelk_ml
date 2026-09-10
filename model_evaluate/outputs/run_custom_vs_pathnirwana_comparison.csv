@@ -1,0 +1,10 @@
+field,custom,pathnirwana_A_separate_unrelated_run
+dataset,voicelk_custom (YouTube-scraped),pathnirwana (single speaker mislabeled as 234)
+num_speakers (config),0,234
+use_speaker_embedding,False,True
+sample_rate,16000,22050
+num_chars,90,41
+known data-format bug,"No (already uses split('|',1))","Yes (234 bogus speakers, 31% truncated text)"
+parameters,83051308,86453036
+mean RTF (CPU),0.329,0.449
+MCD measurable locally,Yes (ground-truth wavs present),No (ground-truth wavs absent locally)

@@ -1,0 +1,11 @@
+﻿sample_id,run,speaker_id,raw_text,ipa_text,wav_path,naturalness_1to5,similarity_1to5,intelligibility_1to5,notes
+run_a_s0_00,run_a,0,කුඹුර ගොවියාට වී ලබා ගැනීමට උපකාරී වීම් වශයෙන් පිහිට වන්නකි.,kumbura goʋijaːʈa ʋiː labaː gæniːmaʈa upakaːriː ʋiːm ʋaʃajen pihiʈa ʋannaki .,d:\RUSL\Final Project\TTS\voicelk_ml\model_evaluate\outputs\mos_samples\run_a_s0_00.wav,,,,
+run_a_s0_01,run_a,0,අද කාලගුණය ඉතා අලංකාරයි.,ad̪a kaːlaguɳaja it̪aː alakaːraji .,d:\RUSL\Final Project\TTS\voicelk_ml\model_evaluate\outputs\mos_samples\run_a_s0_01.wav,,,,
+run_a_s0_02,run_a,0,මගේ නම කුමක්ද කියා ඔබට කිව නොහැක.,mageː nama kumakd̪a kijaː obaʈa kiʋa nohæka .,d:\RUSL\Final Project\TTS\voicelk_ml\model_evaluate\outputs\mos_samples\run_a_s0_02.wav,,,,
+run_a_s0_03,run_a,0,This is a code-switched sentence with English words.,ðɪs ɪz eɪ koʊd rɯɳa swɪʧt ˈsɛntəns wɪθ ˈɪŋlɪʃ wərdz .,d:\RUSL\Final Project\TTS\voicelk_ml\model_evaluate\outputs\mos_samples\run_a_s0_03.wav,,,,
+run_a_s0_04,run_a,0,"එක් , දෙක , තුන් , හතර , පහ.","ek , d̪eka , t̪un , hət̪ərə , paha .",d:\RUSL\Final Project\TTS\voicelk_ml\model_evaluate\outputs\mos_samples\run_a_s0_04.wav,,,,
+run_b_s0_00,run_b,0,කුඹුර ගොවියාට වී ලබා ගැනීමට උපකාරී වීම් වශයෙන් පිහිට වන්නකි.,kumbura goʋijaːʈa ʋiː labaː gæniːmaʈa upakaːriː ʋiːm ʋaʃajen pihiʈa ʋannaki .,d:\RUSL\Final Project\TTS\voicelk_ml\model_evaluate\outputs\mos_samples\run_b_s0_00.wav,,,,
+run_b_s0_01,run_b,0,අද කාලගුණය ඉතා අලංකාරයි.,ad̪a kaːlaguɳaja it̪aː alakaːraji .,d:\RUSL\Final Project\TTS\voicelk_ml\model_evaluate\outputs\mos_samples\run_b_s0_01.wav,,,,
+run_b_s0_02,run_b,0,මගේ නම කුමක්ද කියා ඔබට කිව නොහැක.,mageː nama kumakd̪a kijaː obaʈa kiʋa nohæka .,d:\RUSL\Final Project\TTS\voicelk_ml\model_evaluate\outputs\mos_samples\run_b_s0_02.wav,,,,
+run_b_s0_03,run_b,0,This is a code-switched sentence with English words.,ðɪs ɪz eɪ koʊd rɯɳa swɪʧt ˈsɛntəns wɪθ ˈɪŋlɪʃ wərdz .,d:\RUSL\Final Project\TTS\voicelk_ml\model_evaluate\outputs\mos_samples\run_b_s0_03.wav,,,,
+run_b_s0_04,run_b,0,"එක් , දෙක , තුන් , හතර , පහ.","ek , d̪eka , t̪un , hət̪ərə , paha .",d:\RUSL\Final Project\TTS\voicelk_ml\model_evaluate\outputs\mos_samples\run_b_s0_04.wav,,,,
