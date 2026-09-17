@@ -27,3 +27,8 @@ custom_unseen_test_output.wav
 pathnirwana_test_output.wav
 pathnirwana_unseen_test_output.wav
 docs/LEXICON_GAP_ANALYSIS.md
+docs/modules_and_components_report.html
+docs/text-to-ipa-pipeline.html
+model_evaluate/outputs/run_custom_duration_alignment.png
+model_evaluate/outputs/run_custom_duration_alignment.png
+model_evaluate/model/*
