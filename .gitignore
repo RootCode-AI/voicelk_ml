@@ -32,3 +32,13 @@ docs/text-to-ipa-pipeline.html
 model_evaluate/outputs/run_custom_duration_alignment.png
 model_evaluate/outputs/run_custom_duration_alignment.png
 model_evaluate/model/*
+
+model_evaluate/outputs/*
+
+# Evaluation suite artifacts (generated audio + downloaded encoder weights)
+model_evaluate/outputs/40_listening_test/audio/
+model_evaluate/outputs/_speechbrain_ecapa/
+model_evaluate/build_report.py
+model_evaluate/training_environments.json
+model_evaluate/md_to_docx.js
+model_evaluate/EVALUATION_REPORT.docx
