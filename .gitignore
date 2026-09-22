@@ -42,3 +42,6 @@ model_evaluate/build_report.py
 model_evaluate/training_environments.json
 model_evaluate/md_to_docx.js
 model_evaluate/EVALUATION_REPORT.docx
+
+model_finetune/venv_ft/*
+model_finetune/outputs/*

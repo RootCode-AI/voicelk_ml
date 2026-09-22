@@ -1,0 +1,60 @@
+# Fix A — training-free diagnostics.
+#
+# ---------------------------------------------------------------------------
+# DO NOT run `pip install -r` against a venv that already works.
+#
+# An earlier version of this file pinned exact versions (==) of packages that
+# were already installed. pip then uninstalled the working copies to satisfy
+# the pins, and a failure partway through left the environment with no numpy,
+# pandas, scipy or torch.
+#
+# Every requirement below is already present in `voicelk_ml/venv_evoluation`
+# and (once repaired) in `voicelk_ml/venv`. Install nothing unless something
+# is actually missing. To check:
+#
+#   .\venv_evoluation\Scripts\python.exe -m pip list
+#
+# If a single package is missing, install that one package by name.
+# ---------------------------------------------------------------------------
+
+# --- core (present in both venvs) ---
+numpy
+pandas
+scipy
+librosa
+soundfile
+torch
+torchaudio
+matplotlib
+
+# --- text front-end, needed by the A3 G2P audit ---
+sinling
+eng_to_ipa
+
+# --- the vendored Coqui tree needs these to import ---
+coqpit
+mutagen
+inflect
+anyascii
+
+# --- notebook ---
+ipykernel
+
+# ---------------------------------------------------------------------------
+# Optional — unblocks the five metrics Appendix B records as skipped.
+#
+# These install on Python 3.11 and NOT on 3.14, which is the only reason to
+# prefer `venv` over `venv_evoluation` once `venv` is repaired:
+#
+#   pystoi          -> STOI / ESTOI
+#   pesq            -> PESQ  (needs MS Visual C++ Build Tools on Windows)
+#   speechbrain     -> ECAPA-TDNN x-vectors, replacing the spectral proxy in
+#                      §3.8 whose -0.331 and -0.5 cosines are artefacts of
+#                      mean-centring over a two-item set
+#   transformers    -> UTMOS neural MOS prediction
+#
+#   pip install pystoi speechbrain transformers
+#   pip install pesq            # after installing the Build Tools
+#
+# Fix A's own sections (A1-A7) need none of these and run on either venv.
+# ---------------------------------------------------------------------------
