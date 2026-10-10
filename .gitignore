@@ -45,3 +45,4 @@ model_evaluate/EVALUATION_REPORT.docx
 
 model_finetune/venv_ft/*
 model_finetune/outputs/*
+data/*
