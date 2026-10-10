@@ -56,7 +56,9 @@ def build_characters_config(metadata_path: str) -> CharactersConfig:
             "Vocabulary: the metadata contains symbols the current front-end no longer produces "
             f"(regenerate it with data_preparation/*.py): {' '.join(unknown)}"
         )
-    chars |= inventory
+    # Punctuation too: the front-end passes it through whatever this dataset happens to
+    # contain, and a mark missing from the vocabulary is silently dropped at inference
+    chars |= inventory | KNOWN_PUNCTUATION
 
     punctuations = "".join(sorted(c for c in chars if c in KNOWN_PUNCTUATION))
     phoneme_characters = "".join(sorted(c for c in chars if c not in KNOWN_PUNCTUATION))
