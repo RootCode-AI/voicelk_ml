@@ -1,4 +1,5 @@
 import re
+import unicodedata
 
 
 class SinhalaTextNormalizer:
@@ -12,10 +13,11 @@ class SinhalaTextNormalizer:
     Processing order (applied inside ``normalize``):
       1. expand_urls_and_ips  — web domains and dotted IP addresses
       2. expand_percentages   — numeric percentage expressions
-      3. expand_symbols       — mathematical / logical / relational operators
-      4. expand_numbers       — standalone digit sequences
-      5. remove_noise         — emojis and undefined special characters
-      6. pad_punctuation      — decouple punctuation from valid tokens
+      3. split_hyphenated_words — hyphen inside a word is a space, not minus
+      4. expand_symbols       — mathematical / logical / relational operators
+      5. expand_numbers       — standalone digit sequences
+      6. remove_noise         — emojis and undefined special characters
+      7. pad_punctuation      — decouple punctuation from valid tokens
     """
 
     def __init__(self):
@@ -81,6 +83,13 @@ class SinhalaTextNormalizer:
         text = text.replace("%", " ප්‍රතිශතය ")
         return text
 
+    def split_hyphenated_words(self, text: str) -> str:
+        """
+        Turns a hyphen between two letters into a space, so compounds such as
+        "compile-time" or "ඊ-කසළ" are read as words rather than with "සෘණ".
+        """
+        return re.sub(r"(?<=[A-Za-z඀-෿])-(?=[A-Za-z඀-෿])", " ", text)
+
     def expand_symbols(self, text: str) -> str:
         """Converts mathematical and logical symbols to their Sinhala equivalents."""
         # Sort longest-first to prevent partial matches (== before =, != before !)
@@ -101,8 +110,14 @@ class SinhalaTextNormalizer:
 
         Retains: Sinhala Unicode block (U+0D80–U+0DFF), Zero-Width Joiner
         (U+200D) for conjunct letters, ASCII letters, whitespace, and common
-        punctuation marks.
+        punctuation marks.  Accented Latin letters are folded to plain ASCII
+        first (Düsseldorf → Dusseldorf) instead of splitting the word.
         """
+        text = re.sub(
+            r"[À-ɏ]",
+            lambda m: unicodedata.normalize("NFKD", m.group()).encode("ascii", "ignore").decode(),
+            text,
+        )
         text = re.sub(r"[^\u0D80-\u0DFFa-zA-Z\s.,?!\'\"\u200D]", " ", text)
         text = re.sub(r"\s+", " ", text).strip()
         return text
@@ -115,6 +130,7 @@ class SinhalaTextNormalizer:
         """Executes the full preprocessing pipeline in the correct logical order."""
         text = self.expand_urls_and_ips(text)
         text = self.expand_percentages(text)
+        text = self.split_hyphenated_words(text)
         text = self.expand_symbols(text)
         text = self.expand_numbers(text)
         text = self.remove_noise(text)

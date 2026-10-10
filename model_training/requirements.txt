@@ -35,3 +35,7 @@ packaging>=23.1
 mutagen>=1.47.0
 pysbd>=0.3.4
 matplotlib>=3.7.0
+# The text front-end (model_engine/) — vocab_utils.py builds the model vocabulary from
+# its phoneme inventory, so training imports it too
+eng-to-ipa>=0.0.2
+sinling>=0.3.6
