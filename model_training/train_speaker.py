@@ -105,6 +105,14 @@ def main():
         save_n_checkpoints=2,
     )
 
+    # The default 1% eval split rounds down to no clips on a small recording set (under 100
+    # clips), which Coqui rejects; hold out two clips instead. Values above 1 are a count.
+    with open(metadata_path, "r", encoding="utf-8") as f:
+        clip_count = sum(1 for line in f if line.strip())
+    if clip_count * config.eval_split_size < 1:
+        config.eval_split_size = 2
+    print(f"Clips: {clip_count} ({config.eval_split_size} held out for evaluation)")
+
     ap = AudioProcessor.init_from_config(config)
     tokenizer, config = TTSTokenizer.init_from_config(config)
 
