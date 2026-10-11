@@ -1,283 +1,147 @@
-﻿# voicelk_ml — VoiceLK Machine Learning Service
+# VoiceLK ML
 
-> **Part of the VoiceLK Adaptive Sinhala TTS System**  
-> A dedicated Python AI microservice responsible for NLP text processing and (upcoming) VITS acoustic synthesis. Designed specifically for Sri Lanka's G.C.E. O/L ICT curriculum.
+Python service and research tools for adaptive Sinhala text-to-speech, focused on Sri Lanka's G.C.E. O/L ICT curriculum.
 
----
+VoiceLK aims to make Sinhala educational material easier to access through speech, including text that mixes Sinhala and English ICT terminology. This repository contains the text-processing API, pronunciation lexicon, dataset preparation, VITS training and synthesis scripts, and evaluation tools.
 
-## Overview
+## Current capabilities
 
-`voicelk_ml` is the **Python AI microservice** within the larger VoiceLK platform. It operates as a focused, stateless HTTP service that accepts mixed Sinhala-English text and returns a unified IPA (International Phonetic Alphabet) phoneme sequence ready for acoustic model synthesis.
+- Normalize Sinhala-English text, numbers, symbols, and common ICT terms.
+- Convert normalized text to an International Phonetic Alphabet (IPA) sequence.
+- Serve the text-processing pipeline through a Flask HTTP API.
+- Prepare speech datasets and train VITS models using research scripts.
+- Synthesize audio offline from a checkpoint and its matching configuration.
+- Audit pronunciation, alignment, and synthesis quality with evaluation tools.
 
-### Platform Architecture
+The HTTP API currently returns text and IPA, not audio. Training, synthesis, and evaluation are separate workflows; their presence does not imply validated production speech quality.
 
-```
-┌─────────────────────┐        ┌──────────────────────────┐
-│   React Frontend    │◄──────►│    Java Backend (Spring) │
-│  (Student/Teacher   │        │  Auth · DB · Sessions    │
-│      Portal)        │        │  Business Logic          │
-└─────────────────────┘        └────────────┬─────────────┘
-                                            │  POST /api/generate-ipa
-                                            │  {"text": "..."}
-                                            ▼
-                                ┌──────────────────────────┐
-                                │   voicelk_ml  (THIS)     │
-                                │  Python · Flask          │
-                                │  NLP Pipeline + VITS     │
-                                └──────────────────────────┘
-```
+## Architecture
 
-This service has **no database**, **no authentication**, and **no session management** — all of that is the responsibility of the Java backend. `voicelk_ml` does one thing: **convert text to phonemes (and eventually audio)**.
+The wider VoiceLK platform uses a React frontend and a Java/Spring backend. The backend calls this Python service to process text. Authentication, authorization, sessions, and database storage belong to the surrounding application.
 
----
+The processing sequence is: input text → normalization → code-switched grapheme-to-phoneme conversion → IPA. Offline VITS synthesis then uses a compatible trained model to produce audio.
 
-## Current Features
+## Repository map
 
-| Feature | Status |
-|---|---|
-| Stage 1: Text Normalisation (`normalizer.py`) | ✅ Complete |
-| Stage 2: Code-Switched G2P (`g2p.py`) | ✅ Complete |
-| Domain Lexicon — O/L ICT Terms (`lexicon.json`) | ✅ Complete |
-| End-to-End NLP Pipeline (`pipeline.py`) | ✅ Complete |
-| REST API — `/health` & `/api/generate-ipa` | ✅ Complete |
-| VITS Acoustic Model (IPA → Audio waveform) | 🔬 Research Phase |
+| Path | Purpose |
+| --- | --- |
+| [api/main.py](api/main.py) | Flask application and HTTP endpoints |
+| [model_engine/](model_engine/) | Normalizer, G2P engine, pipeline, and domain lexicon |
+| [data_preparation/](data_preparation/) | Dataset preparation and metadata validation |
+| [model_training/](model_training/) | VITS training, vocabulary tools, and offline synthesis |
+| [model_evaluate/](model_evaluate/) | Evaluation and pipeline audits |
+| [model_finetune/](model_finetune/) | Training-free diagnostics and evaluation reproducibility work |
+| [tests/test_api.py](tests/test_api.py) | Manual request script for a running local service |
+| [docs/](docs/) | Project documentation and repository administration guidance |
 
----
+Training dependencies and vendored Coqui components are separate from the lightweight API environment. Data and model artifacts may need to be obtained separately; inspect each script's paths before running it.
 
-## Directory Structure
+## Run the text-processing API
 
-```
-voicelk_ml/
-├── api/
-│   └── main.py              # Flask microservice entry point (2 endpoints)
-│
-├── model_engine/            # Core NLP pipeline — do not modify without testing
-│   ├── __init__.py          # Exports TextProcessingPipeline
-│   ├── pipeline.py          # Chains Stage 1 + Stage 2 into one call
-│   ├── normalizer.py        # Stage 1: text cleaning and symbol expansion
-│   ├── g2p.py               # Stage 2: code-switched grapheme-to-phoneme
-│   └── lexicon.json         # Domain-specific pronunciation dictionary (~83 KB)
-│
-├── model_training/          # (Future) VITS model training scripts and configs
-│
-├── data/                    # (Future) Raw and preprocessed training datasets
-│
-├── .env.example             # Environment variable template
-├── .gitignore
-└── requirements.txt         # Python dependencies (NLP only)
-```
-
-### Folder Explanations
-
-| Folder / File | Purpose |
-|---|---|
-| `api/main.py` | Lightweight Flask app. Receives requests from the Java backend and returns IPA sequences. |
-| `model_engine/` | The complete, production-ready NLP pipeline. **Core logic — handle with care.** |
-| `model_engine/normalizer.py` | Cleans raw input: expands symbols (`==` → `සමානයි`), numbers (`1024` → `එක්දහස් විසි හතර`), URLs, IP addresses, percentages. |
-| `model_engine/g2p.py` | Detects Sinhala vs. English tokens and routes each to the correct phoneme module. Handles acronyms intelligently (RAM → ɑːr eɪ em). |
-| `model_engine/lexicon.json` | Hand-curated pronunciation dictionary for O/L ICT terms in both English and Sinhala. Overrides library defaults for domain accuracy. |
-| `model_engine/pipeline.py` | Composes `normalizer.py` → `g2p.py` into a single `process(text)` call. |
-| `model_training/` | Will contain training scripts, configs, and checkpoints for the VITS acoustic model. |
-| `data/` | Will contain raw audio recordings, transcripts, and preprocessed feature files for model training. |
-
----
-
-## Architecture & Data Flow
-
-### Text-to-IPA Pipeline (Active)
-
-```
-Java Backend sends:
-  POST /api/generate-ipa
-  {"text": "RAM එක 1024 MB වේ. A == B නම් 100% නිවැරදියි."}
-
-                      │
-                      ▼
-         ┌──────────────────────────┐
-         │  Stage 1: normalizer.py  │
-         │                          │
-         │  • Expand URL / IP       │  "192.168.1.1" → "එකසිය... ඩොට් ..."
-         │  • Expand percentages    │  "100%" → "සියයට සියයක්"
-         │  • Expand operators      │  "==" → "සමානයි", "&&" → "සහ"
-         │  • Expand numbers        │  "1024" → "එක්දහස් විසි හතර"
-         │  • Strip noise/emojis    │
-         └───────────┬──────────────┘
-                     │  Cleaned Sinhala text
-                     ▼
-         ┌──────────────────────────┐
-         │  Stage 2: g2p.py         │
-         │                          │
-         │  Sinling tokeniser splits│
-         │  text into segments:     │
-         │                          │
-         │  [English token]         │  → eng_to_ipa / letter-spell / lexicon
-         │  [Sinhala token]         │  → consonant-modifier rules / lexicon
-         │  [Punctuation]           │  → retained as-is                      
-         └───────────┬──────────────┘
-                     │  Unified IPA sequence
-                     ▼
-
-Java Backend receives:
-  {
-    "status": "success",
-    "raw_input": "RAM එක 1024 MB වේ...",
-    "normalized_text": "ɑːr eɪ em එක...",
-    "ipa_sequence": "ɑːr eɪ em aka..."
-  }
-```
-
-### Code-Switching — How It Works
-
-The G2P engine handles native Sinhala-English mixing at the **token level**:
-
-| Token Type | Example | Routing | Output |
-|---|---|---|---|
-| English word | `Database` | `eng_to_ipa` library | `ˈdeɪtəbeɪs` |
-| ALL-CAPS acronym | `RAM` | Letter-spelling | `ɑːr eɪ em` |
-| Lexicon word | `HTML` | `lexicon.json` override | custom IPA |
-| Sinhala word | `දත්ත` | Rule-based decomposition | `d̪at̪t̪a` |
-| Sinhala ICT term | `පරිගණකය` | `si_lexicon` override | precise IPA |
-| Punctuation | `.` `,` | Passed through | `.` `,` |
-
----
-
-## API Reference
-
-### `GET /health`
-
-Liveness probe. Returns service status.
-
-**Response `200`:**
-```json
-{
-  "status": "healthy",
-  "service": "VoiceLK ML Service"
-}
-```
-
----
-
-### `POST /api/generate-ipa`
-
-Accepts mixed Sinhala-English text and returns the full IPA phoneme sequence.
-
-**Request body:**
-```json
-{
-  "text": "Database Management System එකක් හදන්නේ කෙසේද?"
-}
-```
-
-**Response `200`:**
-```json
-{
-  "status": "success",
-  "raw_input": "Database Management System එකක් හදන්නේ කෙසේද?",
-  "normalized_text": "Database Management System ekak hadanne kesed?",
-  "ipa_sequence": "ˈdeɪtəbeɪs ˈmænɪdʒmənt ˈsɪstəm ekak hadanne kesed ?"
-}
-```
-
-**Response `400` — missing or empty text:**
-```json
-{
-  "status": "error",
-  "message": "'text' field is required and must not be empty."
-}
-```
-
----
-
-## Local Setup
-
-### 1. Clone the repository
+Use a dedicated Python virtual environment. Python 3.11 is a practical starting point for the wider research toolchain; compatibility with every Python version is not guaranteed.
 
 ```bash
-git clone https://github.com/RootCode-AI/adaptive-sinhala-tts.git
-cd adaptive-sinhala-tts
-```
-
-### 2. Create and activate a virtual environment
-
-```bash
+git clone https://github.com/RootCode-AI/voicelk_ml.git
+cd voicelk_ml
 python -m venv venv
+```
 
-# Windows
-venv\Scripts\activate
+Activate it in PowerShell:
 
-# macOS / Linux
+```powershell
+.\venv\Scripts\Activate.ps1
+```
+
+Or on macOS/Linux:
+
+```bash
 source venv/bin/activate
 ```
 
-### 3. Install dependencies
+Install the API dependencies and run the service:
 
 ```bash
-pip install -r requirements.txt
-```
-
-### 4. Configure environment (optional)
-
-```bash
-cp .env.example .env
-# Edit .env if needed — no database credentials required for this service
-```
-
-### 5. Start the service
-
-```bash
+python -m pip install -r requirements.txt
 python api/main.py
 ```
 
-The service starts on `http://127.0.0.1:5000`.
+Access it at `http://127.0.0.1:5000`. No `.env` file is required by the current entry point.
 
-### 6. Test the endpoints
+**Development only:** this command enables Flask debug mode and binds to `0.0.0.0`. Run it on a trusted development machine. Production deployment needs a production WSGI server, disabled debugging, authentication at the gateway/backend, request limits, and a restricted CORS policy. See [Security](SECURITY.md).
 
-```bash
-# Health check
-curl http://127.0.0.1:5000/health
+## API
 
-# IPA generation
-curl -X POST http://127.0.0.1:5000/api/generate-ipa \
-  -H "Content-Type: application/json" \
-  -d "{\"text\": \"RAM එක 1024 MB වේ.\"}"
+### GET /health
+
+Returns HTTP 200:
+
+```json
+{"status": "healthy", "service": "VoiceLK ML Service"}
 ```
 
----
+### POST /api/generate-ipa
 
-## Technology Stack
+Send a JSON object with a non-empty string in `text`:
 
-| Layer | Technology | Version |
-|---|---|---|
-| API Framework | Python / Flask | `>=3.0.0` |
-| Cross-Origin | Flask-CORS | `>=4.0.0` |
-| Sinhala Tokenisation | `sinling` | `>=0.1.0` |
-| English Phonetics | `eng-to-ipa` | `>=0.0.2` |
-| Environment Config | `python-dotenv` | `>=1.0.0` |
-| Acoustic Model *(future)* | VITS Neural TTS | — |
+```json
+{"text": "RAM සහ CPU"}
+```
 
----
+A successful response contains `status`, `raw_input`, `normalized_text`, and `ipa_sequence`. Pronunciation depends on the normalizer, rules, and lexicon; do not treat an example output as a quality guarantee.
 
-## Roadmap
+Missing or blank text returns HTTP 400 with:
 
-- [x] Stage 1: Text normalisation pipeline
-- [x] Stage 2: Code-switched G2P engine
-- [x] Domain lexicon — Grade 10 & 11 O/L ICT terms
-- [x] REST API microservice
-- [ ] VITS acoustic model integration (IPA → waveform)
-- [ ] Model training infrastructure (`model_training/`)
-- [ ] Sinhala speech corpus compilation (`data/`)
-- [ ] Docker containerisation for deployment
+```json
+{"status": "error", "message": "'text' field is required and must not be empty."}
+```
 
----
+Processing failures return HTTP 500. Clients should send the documented JSON shape; other input types are not comprehensively validated.
 
-## Related Repositories
+With the service running, try this in another PowerShell window:
 
-| Service | Language | Responsibility |
-|---|---|---|
-| `voicelk_ml` *(this)* | Python | NLP Pipeline · Acoustic Model |
-| `voicelk_backend` | Java (Spring Boot) | Auth · Database · Business Logic |
-| `voicelk_frontend` | React | Student / Teacher UI |
+```powershell
+Invoke-RestMethod http://127.0.0.1:5000/health
+$body = @{ text = "RAM and CPU" } | ConvertTo-Json
+Invoke-RestMethod http://127.0.0.1:5000/api/generate-ipa -Method Post -ContentType "application/json" -Body $body
+```
 
----
+The existing manual request script needs the extra `requests` package:
 
-> **Note:** This service is stateless. It holds no user data, performs no authentication, and writes to no database. All sensitive operations are handled by the Java backend.
+```bash
+python -m pip install requests
+python tests/test_api.py
+```
+
+It prints results and does not contain automated assertions.
+
+## Training, synthesis, and evaluation
+
+Install [training requirements](model_training/requirements.txt) in a separate environment. Review dataset paths, metadata, sample rate, compute requirements, and source permissions before running any training script.
+
+For an existing compatible VITS model:
+
+```bash
+python model_training/synthesize.py --model_dir /path/to/model --text "RAM and CPU" --out output.wav
+```
+
+The model directory must contain a checkpoint and its matching `config.json`. Availability and permitted use of weights and recordings depend on their sources.
+
+See [diagnostic workflow instructions](model_finetune/README.md) for the evaluation work. Record checkpoint identity, configuration, seeds, dataset split, and metric settings when comparing models.
+
+## Contribute and participate
+
+Bug reports, pronunciation corrections, documentation, accessibility feedback, and reproducible research contributions are welcome.
+
+- [Contributing guidelines](CONTRIBUTING.md)
+- [Code of conduct](CODE_OF_CONDUCT.md)
+- [Code of ethics](CODE_OF_ETHICS.md)
+- [Accessibility commitment and reporting](ACCESSIBILITY.md)
+- [Security policy and private reporting](SECURITY.md)
+- [Issue templates](https://github.com/RootCode-AI/voicelk_ml/issues/new/choose)
+- [Repository administrator checklist](docs/REPOSITORY_ADMIN.md)
+
+## License and third-party materials
+
+Original VoiceLK code and documentation are available under the [MIT License](LICENSE). Vendored code, datasets, recordings, and model weights are not relicensed by that grant. See [third-party notices](THIRD_PARTY_NOTICES.md) for scope and provenance limitations.
+
+Speaker consent, dataset permissions, and research integrity are covered by the [Code of Ethics](CODE_OF_ETHICS.md). These community expectations do not add restrictions to the MIT license.

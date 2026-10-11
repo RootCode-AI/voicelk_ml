@@ -1,0 +1,28 @@
+name: Feature request
+description: Suggest an improvement to VoiceLK.
+title: "[Feature]: "
+body:
+  - type: textarea
+    id: need
+    attributes:
+      label: Problem or user need
+      description: Who would benefit and what is currently difficult?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed change
+      description: Describe the intended behavior and how success could be checked.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Include existing workarounds if any.
+  - type: textarea
+    id: impact
+    attributes:
+      label: Data, ethics, and accessibility considerations
+      description: Note any speaker permissions, dataset terms, privacy concerns, or accessibility needs. Do not include private data.
