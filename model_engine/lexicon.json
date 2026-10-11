@@ -6,7 +6,7 @@
     "updated": "2026-10-10",
     "schema_version": "1.5",
     "ipa_format": "plain (character-level phonemes concatenated with no separator within a word, words space-separated, punctuation preserved); English in eng_to_ipa's symbol set, affricates as tʃ / dʒ, Sinhala as spoken (unaspirated, ෂ = ʃ, schwa where everyday speech reduces /a/)",
-    "en_lexicon_count": 464,
+    "en_lexicon_count": 465,
     "si_lexicon_count": 108
   },
   "en_lexicon": {
@@ -3257,6 +3257,13 @@
       "expansion": "Material Design Icons",
       "chapter": "Mobile App Development (Flutter)",
       "risk": "also written in lower case; the default rule only spells capitals"
+    },
+    "i'm": {
+      "ipa": "aɪm",
+      "read_as": "word",
+      "expansion": "I am",
+      "chapter": "General Syntax",
+      "risk": "eng_to_ipa gives the reduced form /əm/"
     }
   },
   "si_lexicon": {

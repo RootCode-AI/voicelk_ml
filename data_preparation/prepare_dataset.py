@@ -18,12 +18,12 @@ def prepare_vits_dataset():
 
     # Define file paths based on the custom dataset name (resolved relative to the
     # project root, not the current working directory)
-    csv_path = os.path.join(project_root, "data", "custom_dataset.csv")
-    output_txt = os.path.join(project_root, "data", "custom_metadata.txt")
+    csv_path = os.path.join(project_root, "data", "prepared", "custom_dataset.csv")
+    output_txt = os.path.join(project_root, "data", "prepared", "custom_metadata.txt")
 
     # Check if the dataset CSV exists before proceeding
     if not os.path.exists(csv_path):
-        print(f"Error: Could not find '{csv_path}'. Please ensure the CSV file is named correctly and placed in the 'data' folder.")
+        print(f"Error: Could not find '{csv_path}'. Please ensure the CSV file is named correctly and placed in the 'data/prepared' folder.")
         return
 
     processed_count = 0

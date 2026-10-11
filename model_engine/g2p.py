@@ -174,12 +174,29 @@ class CodeSwitchedG2P:
         if "*" not in converted:
             return converted
 
+        if "'" in text:
+            # An apostrophe word eng_to_ipa does not know: a possessive is the
+            # word plus its -s ending, anything else is read without the mark
+            base, _, suffix = text.partition("'")
+            if suffix.lower() == "s":
+                return self._process_english(base) + self._possessive_ending(self._process_english(base))
+            return self._process_english(text.replace("'", ""))
+
         # eng_to_ipa marks unknown words with "*" and echoes the spelling;
         # a camelCase identifier (setState, openWeatherAPI) is read part by part
         parts = re.findall(r"[A-Z]+(?=[A-Z][a-z])|[A-Z]?[a-z]+|[A-Z]+", text)
         if len(parts) > 1:
             return " ".join(self._process_english(part) for part in parts)
         return self._guess_english(word_lower)
+
+    @staticmethod
+    def _possessive_ending(base_ipa: str) -> str:
+        """English 's: /ɪz/ after a sibilant, /s/ after another voiceless sound, else /z/."""
+        if re.search(r"(s|z|ʃ|ʒ|tʃ|dʒ)$", base_ipa):
+            return "ɪz"
+        if re.search(r"(p|t|k|f|θ)$", base_ipa):
+            return "s"
+        return "z"
 
     def _known_english(self, word: str):
         """IPA for *word* from the lexicon or eng_to_ipa, or None if neither knows it."""
@@ -300,6 +317,28 @@ class CodeSwitchedG2P:
             if not ch.isspace() and ch not in ".,?!'\""
         }
 
+    @staticmethod
+    def _join_contractions(tokens: list) -> list:
+        """
+        Sinling splits English words at the apostrophe ("don't" → don ' t);
+        put a word ' word run back together so it is read as one word.
+        """
+        joined = []
+        i = 0
+        while i < len(tokens):
+            if (
+                i + 2 < len(tokens)
+                and tokens[i + 1] == "'"
+                and re.match(r"^[a-zA-Z]+$", tokens[i])
+                and re.match(r"^[a-zA-Z]+$", tokens[i + 2])
+            ):
+                joined.append(f"{tokens[i]}'{tokens[i + 2]}")
+                i += 3
+            else:
+                joined.append(tokens[i])
+                i += 1
+        return joined
+
     def generate_unified_ipa(self, text: str) -> str:
         """
         Tokenises *text* with the Sinling tokeniser and routes each token to
@@ -308,10 +347,13 @@ class CodeSwitchedG2P:
         Returns a single space-joined IPA string covering all tokens,
         preserving punctuation in its original position.
         """
-        tokens = self.tokenizer.tokenize(text)
+        tokens = self._join_contractions(self.tokenizer.tokenize(text))
         unified_ipa = []
 
         for token in tokens:
+            if re.match(r"^[a-zA-Z]+'[a-zA-Z]+$", token):
+                unified_ipa.append(self._process_english(token))
+                continue
             # A token can mix scripts when a Sinhala suffix is typed straight
             # after an English word ("Microsoftලාගේ"); each run is read in its
             # own language

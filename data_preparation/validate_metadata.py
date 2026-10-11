@@ -16,6 +16,8 @@ def validate_metadata(metadata_path, wavs_dir, expect_speaker_id=False, show_exa
       - Referenced audio files actually exist in wavs_dir
       - No duplicate audio file references
       - Basic stats: total lines, unique speakers (if applicable), IPA token-length distribution
+
+    Returns None when the file does not exist, True when it has issues, False when clean.
     """
     expected_cols = 3 if expect_speaker_id else 2
 
@@ -33,7 +35,7 @@ def validate_metadata(metadata_path, wavs_dir, expect_speaker_id=False, show_exa
 
     if not os.path.exists(metadata_path):
         print(f"  NOT FOUND — skipping ({metadata_path})")
-        return
+        return None
 
     with open(metadata_path, "r", encoding="utf-8") as f:
         for line_num, raw_line in enumerate(f, start=1):
@@ -99,6 +101,7 @@ def validate_metadata(metadata_path, wavs_dir, expect_speaker_id=False, show_exa
     has_issues = bool(malformed_lines or empty_field_lines or missing_audio)
     print("\n  RESULT: " + ("issues found above — fix before training." if has_issues
                              else "looks clean, ready for training."))
+    return has_issues
 
 
 def audio_stats(wavs_dir, label, speaker_pattern=None, show_examples=5):
@@ -175,6 +178,7 @@ if __name__ == "__main__":
     current_dir = os.path.dirname(os.path.abspath(__file__))
     project_root = os.path.dirname(current_dir)
     data_dir = os.path.join(project_root, "data")
+    prepared_dir = os.path.join(data_dir, "prepared")
     wavs_dir = os.path.join(data_dir, "wavs")
 
     parser = argparse.ArgumentParser(description="Validate metadata files and report audio stats for VoiceLK datasets.")
@@ -182,19 +186,29 @@ if __name__ == "__main__":
                          help="Directory containing Pathnirwana .wav files (defaults to data/wavs).")
     parser.add_argument("--custom-wavs", default=wavs_dir,
                          help="Directory containing custom-dataset .wav files (defaults to data/wavs).")
+    parser.add_argument("--speaker-wavs", default=wavs_dir,
+                         help="Directory containing recorded-speaker .wav files (defaults to data/wavs).")
     parser.add_argument("--skip-audio-stats", action="store_true",
                          help="Skip the duration/sample-rate/speaker scan (metadata checks only).")
     args = parser.parse_args()
 
-    # Validate all 3 datasets that share the same data/wavs/ folder.
-    # Adjust the wavs_dir argument per dataset if you end up storing audio in
-    # separate subfolders (e.g. data/custom/wavs/, data/openslr/wavs/) instead.
-    validate_metadata(os.path.join(data_dir, "metadata.txt"), wavs_dir, expect_speaker_id=False)
-    validate_metadata(os.path.join(data_dir, "openslr_metadata.txt"), wavs_dir, expect_speaker_id=True)
-    validate_metadata(os.path.join(data_dir, "pathnirwana_metadata.txt"), wavs_dir, expect_speaker_id=True)
+    # Metadata files live in data/prepared/ (written by the data_preparation scripts);
+    # the audio they reference is resolved against each dataset's wavs folder.
+    results = [
+        validate_metadata(os.path.join(prepared_dir, "custom_metadata.txt"), args.custom_wavs, expect_speaker_id=False),
+        validate_metadata(os.path.join(prepared_dir, "speaker_01_metadata.txt"), args.speaker_wavs, expect_speaker_id=False),
+        validate_metadata(os.path.join(prepared_dir, "openslr_metadata.txt"), wavs_dir, expect_speaker_id=True),
+        validate_metadata(os.path.join(prepared_dir, "pathnirwana_metadata.txt"), args.pathnirwana_wavs, expect_speaker_id=True),
+    ]
 
     if not args.skip_audio_stats:
         # Pathnirwana filenames follow sin_<speaker>_<utterance>.wav — speaker id is a real field here.
         audio_stats(args.pathnirwana_wavs, "Pathnirwana", speaker_pattern=r"^(sin_\d+)_")
         # Custom dataset filenames (Download (N).wav) carry no speaker id, so no speaker_pattern is passed.
         audio_stats(args.custom_wavs, "Custom (code-switch)")
+
+    checked = [r for r in results if r is not None]
+    if not checked:
+        print(f"\nNo metadata file found in {prepared_dir} — nothing was validated.")
+        sys.exit(1)
+    sys.exit(1 if any(checked) else 0)

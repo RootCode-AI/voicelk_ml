@@ -11,13 +11,15 @@ class SinhalaTextNormalizer:
     symbol vocabulary encountered in the Sri Lankan G.C.E. O/L ICT syllabus.
 
     Processing order (applied inside ``normalize``):
-      1. expand_urls_and_ips  — web domains and dotted IP addresses
-      2. expand_percentages   — numeric percentage expressions
-      3. split_hyphenated_words — hyphen inside a word is a space, not minus
-      4. expand_symbols       — mathematical / logical / relational operators
-      5. expand_numbers       — digit sequences, including those written against letters
-      6. remove_noise         — emojis and undefined special characters
-      7. pad_punctuation      — decouple punctuation from valid tokens
+      1. remove_thousands_separators — 1,000 → 1000
+      2. expand_urls_and_ips  — web domains and dotted IP addresses / versions
+      3. expand_percentages   — numeric percentage expressions, decimals included
+      4. split_hyphenated_words — hyphen inside a word is a space, not minus
+      5. expand_slashes       — dates and word pairs; other "/" is division
+      6. expand_symbols       — mathematical / logical / relational operators
+      7. expand_numbers       — integers and decimals, including those against letters
+      8. remove_noise         — emojis and undefined special characters
+      9. pad_punctuation      — decouple punctuation from valid tokens
     """
 
     def __init__(self):
@@ -66,30 +68,50 @@ class SinhalaTextNormalizer:
     # Public expansion methods
     # ------------------------------------------------------------------
 
+    def remove_thousands_separators(self, text: str) -> str:
+        """Joins digit groups written with thousands separators (1,000 → 1000)."""
+        return re.sub(r"(?<=\d),(?=\d{3}(?!\d))", "", text)
+
     def expand_urls_and_ips(self, text: str) -> str:
-        """Converts web domains and dotted IP addresses to spoken Sinhala."""
+        """
+        Converts web domains and dotted digit groups to spoken Sinhala.  Two or
+        more dots (192.168.1.1, version 1.2.3) are read as "ඩොට්"; a single dot
+        between digits is a decimal point and is left to expand_numbers.
+        """
+        # The protocol is not read aloud: "https://www.x.lk" is read from "www"
+        text = re.sub(r"\b[A-Za-z]+://", " ", text)
         for symbol, word in self.url_map.items():
             text = re.sub(re.escape(symbol), word, text, flags=re.IGNORECASE)
-        # Replace dots between digit groups (e.g. 192.168) with spoken form
-        text = re.sub(r"(?<=\d)\.(?=\d)", " ඩොට් ", text)
+        text = re.sub(r"\d+(?:\.\d+){2,}", lambda m: m.group().replace(".", " ඩොට් "), text)
         return text
 
     def expand_percentages(self, text: str) -> str:
         """Converts numeric percentage expressions to natural Sinhala phrasing."""
         def replace_pct(match):
-            num_word = self.get_sinhala_number(match.group(1))
+            num_word = self.number_to_words(match.group(1))
             return f" සියයට {num_word}ක් "
 
-        text = re.sub(r"(\d+)\s*%", replace_pct, text)
+        text = re.sub(r"(\d+(?:\.\d+)?)\s*%", replace_pct, text)
         text = text.replace("%", " ප්‍රතිශතය ")
         return text
 
     def split_hyphenated_words(self, text: str) -> str:
         """
-        Turns a hyphen between two letters into a space, so compounds such as
-        "compile-time" or "ඊ-කසළ" are read as words rather than with "සෘණ".
+        Turns a hyphen inside a word into a space, so compounds such as
+        "compile-time", "ඊ-කසළ" or "COVID-19" are read as words rather than
+        with "සෘණ".  A hyphen after a single letter ("i-1") stays minus.
         """
-        return re.sub(r"(?<=[A-Za-z඀-෿])-(?=[A-Za-z඀-෿])", " ", text)
+        text = re.sub(r"(?<=[A-Za-z඀-෿])-(?=[A-Za-z඀-෿])", " ", text)
+        return re.sub(r"(?<=[A-Za-z]{2})-(?=\d)", " ", text)
+
+    def expand_slashes(self, text: str) -> str:
+        """
+        Reads "/" by context: a date (2024/10/11) and a pair of words (km/h,
+        TCP/IP) are read without it; anything else is division ("බෙදීම").
+        """
+        text = re.sub(r"\b(\d{1,4})/(\d{1,2})/(\d{1,4})\b", r"\1 \2 \3", text)
+        # A word on the left (two letters or more) makes it a pair; "x/y" is division
+        return re.sub(r"(?<=[A-Za-z඀-෿]{2})/(?=[A-Za-z඀-෿])", " ", text)
 
     def expand_symbols(self, text: str) -> str:
         """Converts mathematical and logical symbols to their Sinhala equivalents."""
@@ -115,7 +137,18 @@ class SinhalaTextNormalizer:
         ("5ක්" → "පහක්", "10ට" → "දහයට").
         """
         text = re.sub(r"(?<=[A-Za-z඀-෿])(?=\d)|(?<=\d)(?=[A-Za-z])", " ", text)
-        return re.sub(r"\d+", lambda m: self.get_sinhala_number(m.group()), text)
+        return re.sub(r"\d+(?:\.\d+)?", lambda m: self.number_to_words(m.group()), text)
+
+    def number_to_words(self, num_str: str) -> str:
+        """
+        Sinhala words for an integer or a decimal; the digits after the point
+        are read one by one ("3.14" → "තුන දශම එක හතර").
+        """
+        whole, _, fraction = num_str.partition(".")
+        words = self.get_sinhala_number(whole)
+        if fraction:
+            words += " දශම " + " ".join(self.get_sinhala_number(d) for d in fraction)
+        return words
 
     def remove_noise(self, text: str) -> str:
         """
@@ -124,8 +157,10 @@ class SinhalaTextNormalizer:
         Retains: Sinhala Unicode block (U+0D80–U+0DFF), Zero-Width Joiner
         (U+200D) for conjunct letters, ASCII letters, whitespace, and common
         punctuation marks.  Accented Latin letters are folded to plain ASCII
-        first (Düsseldorf → Dusseldorf) instead of splitting the word.
+        first (Düsseldorf → Dusseldorf) instead of splitting the word, and a
+        typographic apostrophe (’) becomes a plain one so "don’t" stays a word.
         """
+        text = text.replace("’", "'")
         text = re.sub(
             r"[À-ɏ]",
             lambda m: unicodedata.normalize("NFKD", m.group()).encode("ascii", "ignore").decode(),
@@ -141,9 +176,11 @@ class SinhalaTextNormalizer:
 
     def normalize(self, text: str) -> str:
         """Executes the full preprocessing pipeline in the correct logical order."""
+        text = self.remove_thousands_separators(text)
         text = self.expand_urls_and_ips(text)
         text = self.expand_percentages(text)
         text = self.split_hyphenated_words(text)
+        text = self.expand_slashes(text)
         text = self.expand_symbols(text)
         text = self.expand_numbers(text)
         text = self.remove_noise(text)
