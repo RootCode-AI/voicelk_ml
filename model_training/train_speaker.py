@@ -14,6 +14,9 @@ Usage (from the project root):
   python model_training/train_speaker.py --data-path data --metadata speaker_01_metadata.txt
   # resume an interrupted run (the trainer reads the run folder's config and last checkpoint):
   python model_training/train_speaker.py ... --continue_path <run folder>
+  # memorisation test on a metadata file with one or a few clips, full precision:
+  python model_training/train_speaker.py ... --metadata one_clip.txt --memorize --fp32 \
+      --deterministic-durations --epochs 10000 --save-step 500 --keep-checkpoints 20
 """
 
 import argparse
@@ -42,11 +45,30 @@ project_root = os.path.dirname(current_dir)
 
 
 def detect_sample_rate(metadata: str, data_path: str) -> int:
-    """Reads the sample rate of the first clip; prepare_speaker_dataset.py --wav-out
-    writes every clip at the same rate, so one is representative."""
+    """Sample rate shared by every clip. The VITS data loader reads each wav without
+    checking its rate against the config (vits.py VitsDataset.__getitem__), so a clip at
+    another rate would train on wrongly timed spectrograms; refuse to start instead."""
+    rates = {}
     with open(metadata, "r", encoding="utf-8") as f:
-        first = f.readline().split("|", 1)[0]
-    return sf.info(os.path.join(data_path, first)).samplerate
+        for line in f:
+            if line.strip():
+                path = line.split("|", 1)[0]
+                info = sf.info(os.path.join(data_path, path))
+                if info.channels != 1:
+                    raise SystemExit(f"{path} has {info.channels} channels; convert the audio to mono first")
+                rates.setdefault(info.samplerate, []).append(path)
+    if len(rates) != 1:
+        summary = ", ".join(f"{rate} Hz ×{len(paths)} (e.g. {paths[0]})" for rate, paths in rates.items())
+        raise SystemExit(f"Clips have different sample rates: {summary}. Resample them with "
+                         "prepare_speaker_dataset.py --wav-out so they share one rate.")
+    return next(iter(rates))
+
+
+def ipa_test_sentences(metadata: str, count: int = 2) -> list:
+    """The first metadata lines as Coqui test sentences. The default test sentences are
+    English text, which this IPA vocabulary cannot spell, so the logged test audio was noise."""
+    with open(metadata, "r", encoding="utf-8") as f:
+        return [[line.split("|", 1)[1].strip()] for line in f if "|" in line][:count]
 
 
 def main():
@@ -58,6 +80,15 @@ def main():
     parser.add_argument("--epochs", type=int, default=1000)
     parser.add_argument("--batch-size", type=int, default=16)
     parser.add_argument("--save-step", type=int, default=5000)
+    parser.add_argument("--keep-checkpoints", type=int, default=2,
+                        help="How many step checkpoints to keep (raise it to compare milestones)")
+    parser.add_argument("--memorize", action="store_true",
+                        help="Memorisation test: train on every clip, hold none out, keep the "
+                             "checkpoint with the lowest training loss")
+    parser.add_argument("--fp32", action="store_true", help="Train in full precision (no AMP)")
+    parser.add_argument("--deterministic-durations", action="store_true",
+                        help="Plain duration predictor (MSE on log durations) instead of the stochastic "
+                             "one; learns from little data far faster and has no sampling noise")
     args, _ = parser.parse_known_args()
 
     metadata_path = os.path.join(args.data_path, args.metadata)
@@ -94,7 +125,8 @@ def main():
         print_step=25,
         print_eval=True,
         # fp16 on GPU; on CPU autocast would fall back to bfloat16, which the loggers cannot handle
-        mixed_precision=torch.cuda.is_available(),
+        mixed_precision=torch.cuda.is_available() and not args.fp32,
+        test_sentences=ipa_test_sentences(metadata_path),
         output_path=args.output_path,
         datasets=[dataset_config],
         characters=characters_config,
@@ -102,16 +134,27 @@ def main():
         # A full VITS checkpoint with optimizer state is close to 1 GB; Kaggle keeps 20 GB of
         # /kaggle/working, so only the newest two are kept alongside the best one.
         save_step=args.save_step,
-        save_n_checkpoints=2,
+        save_n_checkpoints=args.keep_checkpoints,
     )
 
-    # The default 1% eval split rounds down to no clips on a small recording set (under 100
-    # clips), which Coqui rejects; hold out two clips instead. Values above 1 are a count.
+    if args.deterministic_durations:
+        config.model_args.use_sdp = False
+    print(f"Duration predictor: {'stochastic' if config.model_args.use_sdp else 'deterministic'}")
+
     with open(metadata_path, "r", encoding="utf-8") as f:
         clip_count = sum(1 for line in f if line.strip())
-    if clip_count * config.eval_split_size < 1:
-        config.eval_split_size = 2
-    print(f"Clips: {clip_count} ({config.eval_split_size} held out for evaluation)")
+    if args.memorize:
+        # Every clip is trained on, so any of them can be checked against its recording;
+        # with no eval set the best checkpoint is chosen by training loss.
+        config.run_eval = False
+        print(f"Clips: {clip_count} (memorize mode: all trained on, none held out)")
+    else:
+        # The default 1% eval split rounds down to no clips on a small recording set (under
+        # 100 clips), which Coqui rejects; hold out two clips instead. Values above 1 are a count.
+        if clip_count * config.eval_split_size < 1:
+            config.eval_split_size = 2
+        print(f"Clips: {clip_count} ({config.eval_split_size} held out for evaluation)")
+    print(f"Mixed precision: {config.mixed_precision}")
 
     ap = AudioProcessor.init_from_config(config)
     tokenizer, config = TTSTokenizer.init_from_config(config)
@@ -119,7 +162,7 @@ def main():
     train_samples, eval_samples = load_tts_samples(
         dataset_config,
         formatter=custom_formatter,
-        eval_split=True,
+        eval_split=not args.memorize,
         eval_split_max_size=config.eval_split_max_size,
         eval_split_size=config.eval_split_size,
     )
