@@ -71,13 +71,10 @@ def load_audio(file_path):
     Return Shapes:
         - x: :math:`[1, T]`
     """
-    # VoiceLK note: loaded via `soundfile` instead of `torchaudio.load()` — the latter's
-    # default backend (torchcodec) dynamically loads FFmpeg's native DLLs at runtime, which
-    # proved unreliable to get working on Windows (tried FFmpeg 8.1.2 and 7.1.5, both failed
-    # with the same "Could not load this library" OSError). `soundfile` is a pure libsndfile
-    # binding already used elsewhere in this project and has no such dependency.
+    # Read with soundfile rather than torchaudio.load: from torchaudio 2.9 that call needs
+    # the separate torchcodec package (and FFmpeg), which training/Kaggle images may lack.
     data, sr = sf.read(file_path, dtype="float32", always_2d=True)
-    x = torch.from_numpy(data.T)
+    x = torch.from_numpy(data.T.copy())
     assert (x > 1).sum() + (x < -1).sum() == 0
     return x, sr
 

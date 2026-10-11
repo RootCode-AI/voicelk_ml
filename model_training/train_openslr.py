@@ -24,84 +24,78 @@ from TTS.utils.audio import AudioProcessor
 from formatters import openslr_formatter
 from vocab_utils import build_characters_config
 
+current_dir = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.dirname(current_dir)
+data_path = os.path.join(project_root, "data")
+output_path = os.path.join(current_dir, "runs", "openslr")
 
-def main():
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    project_root = os.path.dirname(current_dir)
-    data_path = os.path.join(project_root, "data")
-    output_path = os.path.join(current_dir, "runs", "openslr")
+METADATA_FILE = "openslr_metadata.txt"
 
-    METADATA_FILE = "openslr_metadata.txt"
+dataset_config = BaseDatasetConfig(
+    formatter="openslr_formatter",
+    dataset_name="voicelk_openslr",
+    meta_file_train=METADATA_FILE,
+    path=data_path,
+)
 
-    dataset_config = BaseDatasetConfig(
-        formatter="openslr_formatter",
-        dataset_name="voicelk_openslr",
-        meta_file_train=METADATA_FILE,
-        path=data_path,
-    )
+characters_config = build_characters_config(os.path.join(data_path, METADATA_FILE))
 
-    characters_config = build_characters_config(os.path.join(data_path, METADATA_FILE))
+# NOTE: sample_rate must match your actual .wav files. Check with, e.g.:
+#   python -c "import soundfile as sf; print(sf.info('data/wavs/<some_file>.wav'))"
+# and adjust here if it isn't 22050.
+audio_config = VitsAudioConfig(
+    sample_rate=22050, win_length=1024, hop_length=256, num_mels=80, mel_fmin=0, mel_fmax=None
+)
 
-    # NOTE: sample_rate must match your actual .wav files. Check with, e.g.:
-    #   python -c "import soundfile as sf; print(sf.info('data/wavs/<some_file>.wav'))"
-    # and adjust here if it isn't 22050.
-    audio_config = VitsAudioConfig(
-        sample_rate=22050, win_length=1024, hop_length=256, num_mels=80, mel_fmin=0, mel_fmax=None
-    )
+vitsArgs = VitsArgs(use_speaker_embedding=True)
 
-    vitsArgs = VitsArgs(use_speaker_embedding=True)
+config = VitsConfig(
+    model_args=vitsArgs,
+    audio=audio_config,
+    run_name="voicelk_vits_openslr",
+    batch_size=16,
+    eval_batch_size=8,
+    batch_group_size=5,
+    num_loader_workers=2,
+    num_eval_loader_workers=2,
+    run_eval=True,
+    test_delay_epochs=-1,
+    epochs=1000,
+    text_cleaner="basic_cleaners",
+    use_phonemes=False,
+    compute_input_seq_cache=True,
+    print_step=25,
+    print_eval=True,
+    mixed_precision=True,
+    output_path=output_path,
+    datasets=[dataset_config],
+    characters=characters_config,
+    cudnn_benchmark=True,
+)
 
-    config = VitsConfig(
-        model_args=vitsArgs,
-        audio=audio_config,
-        run_name="voicelk_vits_openslr",
-        batch_size=8,
-        eval_batch_size=4,
-        batch_group_size=5,
-        num_loader_workers=2,
-        num_eval_loader_workers=2,
-        run_eval=True,
-        test_delay_epochs=-1,
-        epochs=1000,
-        text_cleaner="basic_cleaners",
-        use_phonemes=False,
-        compute_input_seq_cache=True,
-        print_step=25,
-        print_eval=True,
-        mixed_precision=True,
-        output_path=output_path,
-        datasets=[dataset_config],
-        characters=characters_config,
-        cudnn_benchmark=False,
-    )
+ap = AudioProcessor.init_from_config(config)
+tokenizer, config = TTSTokenizer.init_from_config(config)
 
-    ap = AudioProcessor.init_from_config(config)
-    tokenizer, config = TTSTokenizer.init_from_config(config)
+train_samples, eval_samples = load_tts_samples(
+    dataset_config,
+    formatter=openslr_formatter,
+    eval_split=True,
+    eval_split_max_size=config.eval_split_max_size,
+    eval_split_size=config.eval_split_size,
+)
 
-    train_samples, eval_samples = load_tts_samples(
-        dataset_config,
-        formatter=openslr_formatter,
-        eval_split=True,
-        eval_split_max_size=config.eval_split_max_size,
-        eval_split_size=config.eval_split_size,
-    )
+speaker_manager = SpeakerManager()
+speaker_manager.set_ids_from_data(train_samples + eval_samples, parse_key="speaker_name")
+config.model_args.num_speakers = speaker_manager.num_speakers
 
-    speaker_manager = SpeakerManager()
-    speaker_manager.set_ids_from_data(train_samples + eval_samples, parse_key="speaker_name")
-    config.model_args.num_speakers = speaker_manager.num_speakers
+model = Vits(config, ap, tokenizer, speaker_manager=speaker_manager)
 
-    model = Vits(config, ap, tokenizer, speaker_manager=speaker_manager)
-
-    trainer = Trainer(
-        TrainerArgs(),
-        config,
-        output_path,
-        model=model,
-        train_samples=train_samples,
-        eval_samples=eval_samples,
-    )
-    trainer.fit()
-
-
-if __name__ == "__main__":
-    main()
+trainer = Trainer(
+    TrainerArgs(),
+    config,
+    output_path,
+    model=model,
+    train_samples=train_samples,
+    eval_samples=eval_samples,
+)
+trainer.fit()
