@@ -1,0 +1,41 @@
+name: Accessibility barrier
+description: Report a barrier in documentation, speech output, or project workflows.
+title: "[Accessibility]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Describe your experience in whatever detail you are comfortable sharing.
+        No disability or diagnosis disclosure is needed. Do not include private learner information.
+  - type: textarea
+    id: barrier
+    attributes:
+      label: Task and barrier
+      description: What were you trying to do, and what made it difficult or impossible?
+    validations:
+      required: true
+  - type: textarea
+    id: location
+    attributes:
+      label: Affected content and reproduction
+      description: Include the file, page, command, or safe sample text and steps if known.
+    validations:
+      required: true
+  - type: dropdown
+    id: impact
+    attributes:
+      label: Impact
+      options:
+        - Cannot complete the task
+        - Can complete it only with difficulty or a workaround
+        - Minor difficulty
+        - Unsure
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment or assistive technology (optional)
+      description: Share relevant operating system, browser, terminal, or assistive technology versions if helpful.
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Preferred outcome or workaround (optional)

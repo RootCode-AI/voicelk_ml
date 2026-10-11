@@ -1,0 +1,42 @@
+name: Bug report
+description: Report a reproducible problem in the API, pronunciation pipeline, or research tools.
+title: "[Bug]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not include credentials, private recordings, or learner data.
+        For vulnerabilities, follow SECURITY.md instead.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What went wrong?
+      description: Describe the affected component and the impact.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: Include minimal safe input and commands. Use synthetic text or authorized samples.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected and actual behavior
+      description: For pronunciation problems, include expected pronunciation and your reasoning.
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Revision, operating system, Python and dependency versions; include hardware for model issues.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Additional evidence
+      description: Sanitized logs or model configuration, checkpoint identity, seeds, and data split when relevant.

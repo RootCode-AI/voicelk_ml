@@ -15,7 +15,7 @@ class SinhalaTextNormalizer:
       2. expand_percentages   — numeric percentage expressions
       3. split_hyphenated_words — hyphen inside a word is a space, not minus
       4. expand_symbols       — mathematical / logical / relational operators
-      5. expand_numbers       — standalone digit sequences
+      5. expand_numbers       — digit sequences, including those written against letters
       6. remove_noise         — emojis and undefined special characters
       7. pad_punctuation      — decouple punctuation from valid tokens
     """
@@ -26,7 +26,8 @@ class SinhalaTextNormalizer:
             # Logical operators
             "&&": " සහ ",
             "||": " හෝ ",
-            "!":  " නොවේ ",
+            # A lone "!" is only NOT when written as an operator — see
+            # expand_symbols; after a word it is an exclamation mark
 
             # Relational operators
             "<=": " කුඩායි හෝ සමානයි ",
@@ -98,11 +99,23 @@ class SinhalaTextNormalizer:
         )
         for symbol, word in sorted_symbols:
             text = text.replace(symbol, word)
+        # Logical NOT: "!" written straight before an operand ("!x", "(!done)"),
+        # at the start or after a space, bracket or operator.  Any other "!"
+        # ("හරි!", "!!!") stays punctuation.
+        text = re.sub(r"(?:^|(?<=[\s(=&|]))!(?=[A-Za-z0-9඀-෿(])", " නොවේ ", text)
         return text
 
     def expand_numbers(self, text: str) -> str:
-        """Replaces standalone digit sequences with Sinhala cardinal words."""
-        return re.sub(r"\b\d+\b", lambda m: self.get_sinhala_number(m.group()), text)
+        """
+        Replaces digit sequences with Sinhala cardinal words.
+
+        Digits written against letters are read too instead of being dropped
+        later as noise: against Latin letters they become a separate word
+        ("4G" → "හතර G", "MP3" → "MP තුන"); a Sinhala suffix stays attached
+        ("5ක්" → "පහක්", "10ට" → "දහයට").
+        """
+        text = re.sub(r"(?<=[A-Za-z඀-෿])(?=\d)|(?<=\d)(?=[A-Za-z])", " ", text)
+        return re.sub(r"\d+", lambda m: self.get_sinhala_number(m.group()), text)
 
     def remove_noise(self, text: str) -> str:
         """
@@ -193,15 +206,15 @@ class SinhalaTextNormalizer:
             parts.append(self._sinhala_below_1000(remainder))
         return " ".join(parts)
 
-    def _sinhala_millions(self, millions: int, remainder: int) -> str:
-        """Forms Sinhala million-scale words (e.g. එක් මිලියන හතළිස් අට දහස්)."""
+    def _sinhala_large(self, count: int, remainder: int, scale: str) -> str:
+        """Forms Sinhala million / billion-scale words (e.g. එක් මිලියන හතළිස් අට දහස්)."""
         attr = ["", "එක්", "දෙ", "තුන්", "හාර", "පන්", "හය", "හත්", "අට", "නව"]
-        if millions == 1:
-            prefix = "එක් මිලියන" if remainder else "මිලියන"
-        elif millions < 10:
-            prefix = f"{attr[millions]} මිලියන"
+        if count == 1:
+            prefix = f"එක් {scale}" if remainder else scale
+        elif count < 10:
+            prefix = f"{attr[count]} {scale}"
         else:
-            prefix = f"{self.get_sinhala_number(str(millions))} මිලියන"
+            prefix = f"{self.get_sinhala_number(str(count))} {scale}"
         parts = [prefix]
         if remainder:
             parts.append(self.get_sinhala_number(str(remainder)))
@@ -215,6 +228,10 @@ class SinhalaTextNormalizer:
           "0"       → "බිංදුව"
           "1024"    → "එක්දහස් විසි හතර"
           "1000000" → "මිලියන"
+          "1000000000" → "බිලියන"
+
+        A value of a trillion or more (an account or card number rather than a
+        quantity) is read digit by digit, zeros included.
         """
         num = int(num_str)
         if num == 0:
@@ -226,5 +243,8 @@ class SinhalaTextNormalizer:
             return self._sinhala_thousands(thousands, rem)
         if num < 1_000_000_000:
             millions, rem = divmod(num, 1_000_000)
-            return self._sinhala_millions(millions, rem)
-        return " ".join(self.get_sinhala_number(d) for d in num_str if d != "0") or "බිංදුව"
+            return self._sinhala_large(millions, rem, "මිලියන")
+        if num < 1_000_000_000_000:
+            billions, rem = divmod(num, 1_000_000_000)
+            return self._sinhala_large(billions, rem, "බිලියන")
+        return " ".join(self.get_sinhala_number(d) for d in num_str)
