@@ -131,6 +131,12 @@ def test_normalizer(normalizer, text, expected):
     ("don't", "doʊnt"),
     ("I'm", "aɪm"),
     ("flutter's", "ˈflətərz"),
+    # Stress mark in front of the whole onset cluster, not inside it
+    ("future", "ˈfjutʃər"),
+    ("quality", "ˈkwɑləti"),
+    ("throttling", "ˈθrɑtəlɪŋ"),
+    ("require", "ˌriˈkwaɪər"),
+    ("network", "ˈnɛtˌwərk"),
     # A Sinhala suffix typed against an English word
     ("Microsoftලාගේ", "ˈmaɪˌkroʊˈsɔft laːgeː"),
 ])
