@@ -34,7 +34,8 @@ def test_generate_ipa_code_switched_sentence(client):
     assert response.status_code == 200
     body = response.get_json()
     assert body["status"] == "success"
-    assert "එක්දහස් විසි හතර" in body["normalized_text"]
+    # The number sits against an English unit, so it is read in English
+    assert "one thousand twenty four MB" in body["normalized_text"]
     assert "1024" not in body["normalized_text"]
     assert body["ipa_sequence"]
     # Nothing in the IPA may be left in Sinhala script or as raw digits
