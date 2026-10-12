@@ -74,7 +74,8 @@ def ipa_test_sentences(metadata: str, count: int = 2) -> list:
 def main():
     parser = argparse.ArgumentParser(description="Single-speaker VITS training")
     parser.add_argument("--data-path", default=os.path.join(project_root, "data"))
-    parser.add_argument("--metadata", default="speaker_01_metadata.txt")
+    parser.add_argument("--metadata", default=os.path.join("prepared", "speaker_01_metadata.txt"),
+                        help="Metadata file relative to --data-path (prepare_speaker_dataset.py writes data/prepared/)")
     parser.add_argument("--run-name", default="voicelk_vits_speaker_01")
     parser.add_argument("--output-path", default=os.path.join(current_dir, "runs", "speaker_01"))
     parser.add_argument("--epochs", type=int, default=1000)

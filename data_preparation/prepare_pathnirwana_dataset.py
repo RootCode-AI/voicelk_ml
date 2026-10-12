@@ -37,8 +37,8 @@ def prepare_pathnirwana_dataset(input_path=None):
     # Define file paths for the Pathnirwana dataset. Defaults to the project's data/
     # folder (used in Colab/Drive runs), but an explicit input_path (e.g. a local test
     # file) can be passed in instead — see the command-line usage note below.
-    txt_path = input_path or os.path.join(project_root, "data", "pathnirwana_dataset.txt")
-    output_txt = os.path.join(project_root, "data", "pathnirwana_metadata.txt")
+    txt_path = input_path or os.path.join(project_root, "data", "prepared", "pathnirwana_dataset.txt")
+    output_txt = os.path.join(project_root, "data", "prepared", "pathnirwana_metadata.txt")
 
     # Check if the dataset index file exists before proceeding
     if not os.path.exists(txt_path):
@@ -104,7 +104,7 @@ def prepare_pathnirwana_dataset(input_path=None):
 
 if __name__ == "__main__":
     # Usage:
-    #   python prepare_pathnirwana_dataset.py                     -> reads data/pathnirwana_dataset.txt
+    #   python prepare_pathnirwana_dataset.py                     -> reads data/prepared/pathnirwana_dataset.txt
     #   python prepare_pathnirwana_dataset.py /path/to/local/file -> reads that file instead (e.g. for local testing)
     cli_input_path = sys.argv[1] if len(sys.argv) > 1 else None
     prepare_pathnirwana_dataset(cli_input_path)

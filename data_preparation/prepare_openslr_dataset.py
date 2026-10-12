@@ -23,8 +23,8 @@ def prepare_openslr_dataset():
 
     # Define file paths for the OpenSLR dataset (resolved relative to the project root,
     # not the current working directory)
-    csv_path = os.path.join(project_root, "data", "openslr_dataset.csv")
-    output_txt = os.path.join(project_root, "data", "openslr_metadata.txt")
+    csv_path = os.path.join(project_root, "data", "prepared", "openslr_dataset.csv")
+    output_txt = os.path.join(project_root, "data", "prepared", "openslr_metadata.txt")
 
     # Check if the dataset index file exists before proceeding
     if not os.path.exists(csv_path):

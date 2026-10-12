@@ -2,7 +2,7 @@
 Trains a single-speaker VITS model on VoiceLK's custom (YouTube-scraped) dataset.
 
 Expects, relative to the project root:
-  data/metadata.txt   -> produced by data_preparation/prepare_dataset.py
+  data/prepared/custom_metadata.txt -> produced by data_preparation/prepare_dataset.py
   data/wavs/*.wav      -> the audio referenced by metadata.txt
 
 Usage (from the project root, e.g. in Colab after `%cd` into it):
@@ -34,7 +34,8 @@ project_root = os.path.dirname(current_dir)
 data_path = os.path.join(project_root, "data")
 output_path = os.path.join(current_dir, "runs", "custom")
 
-METADATA_FILE = "custom_metadata.txt"
+# Relative to data_path, which stays data/ because the metadata lines point at wavs/...
+METADATA_FILE = os.path.join("prepared", "custom_metadata.txt")
 
 dataset_config = BaseDatasetConfig(
     formatter="custom_formatter",
