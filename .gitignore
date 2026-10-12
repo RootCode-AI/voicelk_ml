@@ -50,3 +50,5 @@ model_training/kaggle_train_speaker.ipynb
 speaker_01_test_output.wav
 docs/assets/voicelk-logo.png
 docs/assets/*
+model_training/kaggle_train_speaker_01.ipynb
+model_training/kaggle_train_speaker_02.ipynb
