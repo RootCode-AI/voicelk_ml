@@ -48,3 +48,5 @@ model_finetune/outputs/*
 data/*
 model_training/kaggle_train_speaker.ipynb
 speaker_01_test_output.wav
+docs/assets/voicelk-logo.png
+docs/assets/*
